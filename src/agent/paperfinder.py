@@ -47,16 +47,14 @@ Create a NEW query focusing on menopause timing (age at menopause, early menopau
 
 Be creative with terminology:
 - Menopause timing variations (early menopause, premature menopause, age at natural menopause, ANM)
-- Include meta-analyses, cohort studies, case-control studies
 - Use related terms for the health outcome
-- Consider cardiovascular, bone health, cognitive outcomes
 
 Create a concise PubMed search query."""
     else:
         prompt = f"""Disease/outcome: {state['disease_of_interest']}
 
 Create a PubMed search query to find studies linking menopause timing (age at menopause, early menopause) to this health outcome.
-Focus on studies with risk metrics (OR, HR, RR), meta-analyses, and cohort/case-control studies. Include relevant keywords and filters."""
+Focus on meta-analyses with risk metrics (OR, HR, RR). Include relevant keywords and filters."""
     
     response = llm.invoke([
         SystemMessage(content="You are an expert at crafting PubMed queries. Find studies linking menopause timing to specific health outcomes with quantitative risk metrics."),
@@ -94,7 +92,7 @@ def check_abstract(state: GraphState) -> dict:
     print(f"\n--- Checking abstract: {paper.get('title', 'No title')[:50]}... ---")
     
     response = llm.invoke([
-        SystemMessage(content=f"You are a paper classifier, that estimates a paper's relevance from it's abstract alone. \nEstimate if this paper studies menopause timing (age at menopause, early/premature menopause) and its association with {state['disease_of_interest']}. Relevant papers likely report quantitative risk metrics (OR, HR, RR) with confidence intervals. Reply 'yes' if relevant, 'no' if not."),
+        SystemMessage(content=f"You are a paper classifier that estimates a paper's relevance from it's abstract alone. \nEstimate if this paper studies menopause timing (age at menopause, early/premature menopause) and its association with {state['disease_of_interest']}. Relevant papers likely report quantitative risk metrics (OR, HR, RR) with confidence intervals. Reply 'yes' if relevant, 'no' if not."),
         HumanMessage(content=f"Title: {paper.get('title', '')}\n\nAbstract: {paper.get('abstract', '')}")
     ])
     
