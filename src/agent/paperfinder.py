@@ -7,10 +7,8 @@ from typing import Literal
 from langgraph.graph import StateGraph, START, END
 from doi2pdf import PDFFromDOI
 import pymupdf4llm
-import mlflow
 from interaction_storage import InteractionStorage
 
-mlflow.langchain.autolog()
 load_dotenv()
 
 llm = ChatNebius(model="moonshotai/Kimi-K2-Instruct")
