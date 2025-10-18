@@ -138,21 +138,59 @@ def extract_interactions(state: GraphState) -> dict:
     extraction_complete = False
     
     from langchain_core.tools import tool
+    from typing import List, Dict
     
     @tool
-    def submit_risk_metric(menopause_timing_definition: str, health_outcome: str, metric_type: str, metric_value: str, ci_95: str) -> str:
-        """Submit an extracted risk metric from the paper.
+    def submit_risk_metrics(metrics: List[Dict[str, str]]) -> str:
+        """Submit multiple extracted risk metrics from the paper in one call.
         
         Args:
-            menopause_timing_definition: How menopause groups were defined (e.g., "Early < 45 years vs Normal 50-54 years" or "per 1-year decrease in age at menopause")
-            health_outcome: Specific health outcome (e.g., "Ischemic Stroke", "Type 2 Diabetes", "Coronary Heart Disease")
-            metric_type: Type of metric - must be "OR", "HR", or "RR"
-            metric_value: The numerical value of the metric (e.g., "1.45", "2.1")
-            ci_95: 95% confidence interval (e.g., "1.20-1.75", "1.8-2.4")
+            metrics: List of risk metrics, where each metric is a dict with keys:
+                - menopause_timing_definition: How menopause groups were defined
+                - health_outcome: Specific health outcome
+                - metric_type: Type of metric (OR, HR, or RR)
+                - metric_value: The numerical value
+                - ci_95: 95% confidence interval
+                
+        Example:
+            metrics = [
+                {
+                    "menopause_timing_definition": "Early < 45 years vs Normal 50-54 years",
+                    "health_outcome": "Coronary Heart Disease",
+                    "metric_type": "HR",
+                    "metric_value": "1.45",
+                    "ci_95": "1.20-1.75"
+                },
+                {
+                    "menopause_timing_definition": "Early < 45 years vs Normal 50-54 years",
+                    "health_outcome": "Stroke",
+                    "metric_type": "HR",
+                    "metric_value": "1.28",
+                    "ci_95": "1.05-1.56"
+                }
+            ]
         """
-        interaction_storage.add_risk_metric(menopause_timing_definition, health_outcome, metric_type, metric_value, ci_95, doi, pub_date)
-        print(f"  ✓ Stored: {health_outcome} | {metric_type}={metric_value} (CI: {ci_95})")
-        return "Risk metric submitted successfully. Continue extracting or call finish_extraction when done."
+        submitted = 0
+        output = ""
+        for metric in metrics:
+            try:
+                interaction_storage.add_risk_metric(
+                    metric['menopause_timing_definition'],
+                    metric['health_outcome'],
+                    metric['metric_type'],
+                    metric['metric_value'],
+                    metric['ci_95'],
+                    doi,
+                    pub_date
+                )
+                output += f"✓ Stored: {metric['health_outcome']} | {metric['metric_type']}={metric['metric_value']} (CI: {metric['ci_95']})\n"
+                submitted += 1
+            except Exception as e:
+                output += f"✗ Failed to store metric: {metric} -- Error: {e.name}\n"
+        
+        output += f"Successfully submitted {submitted} risk metric(s). Call finish_extraction when done."
+        print(output)
+        return output
     
     @tool
     def finish_extraction() -> str:
@@ -161,22 +199,22 @@ def extract_interactions(state: GraphState) -> dict:
         extraction_complete = True
         return "Extraction complete."
     
-    llm_with_tools = llm.bind_tools([submit_risk_metric, finish_extraction])
+    llm_with_tools = llm.bind_tools([submit_risk_metrics, finish_extraction])
     
     initial_prompt = f"""Analyze this paper and extract ALL risk metrics (OR, HR, RR) linking menopause timing to health outcomes.
 
 Target outcome: {state['disease_of_interest']}
 
-Extract for EACH reported metric:
-1. Menopause Timing Definition: How groups were defined (e.g., "Early < 45 years vs Normal 50-54 years", "per 1-year decrease in ANM")
-2. Specific Health Outcome: Be precise (e.g., "Ischemic Stroke" not just "Stroke")
-3. Metric Type: OR, HR, or RR
-4. Metric Value: The numerical value
-5. 95% CI: REQUIRED - the confidence interval
+For EACH risk metric found, extract:
+1. menopause_timing_definition: How groups were defined (e.g., "Early < 45 years vs Normal 50-54 years", "per 1-year decrease in ANM")
+2. health_outcome: Specific health outcome (e.g., "Ischemic Stroke", "Type 2 Diabetes", "Coronary Heart Disease")
+3. metric_type: OR, HR, or RR
+4. metric_value: The numerical value (e.g., "1.45", "2.1")
+5. ci_95: 95% confidence interval (e.g., "1.20-1.75", "1.8-2.4")
 
 CRITICAL REQUIREMENTS:
 - MUST have 95% CI reported (skip metrics without CI)
-- Call submit_risk_metric for EACH metric
+- Submit ALL metrics at once using submit_risk_metrics with a list of all metrics
 - Extract from main results AND subgroup analyses if present
 - When done, call finish_extraction
 
@@ -184,7 +222,7 @@ Paper:
 {state['paper_md']}"""
     
     messages = [
-        SystemMessage(content="You are a scientific paper analyzer. Extract ALL risk metrics (OR, HR, RR) with their 95% CI by calling submit_risk_metric for each. Call finish_extraction when done."),
+        SystemMessage(content="You are a scientific paper analyzer. Extract ALL risk metrics (OR, HR, RR) with their 95% CI. Submit all metrics in one call using submit_risk_metrics with a list. Call finish_extraction when done."),
         HumanMessage(content=initial_prompt)
     ]
     
@@ -201,22 +239,27 @@ Paper:
         
         if hasattr(response, 'tool_calls') and response.tool_calls:
             print(f"  {len(response.tool_calls)} tool call(s)")
+            print(response.tool_calls)
+            for i, tc in enumerate(response.tool_calls):
+                print(f"    Tool call {i+1}: {tc.get('name', 'unknown')} - args keys: {list(tc.get('args', {}).keys())}")
             
             tool_messages = []
             for tool_call in response.tool_calls:
                 tool_name = tool_call['name']
                 
-                if tool_name == 'submit_risk_metric':
+                if tool_name == 'submit_risk_metrics':
                     try:
-                        result = submit_risk_metric.invoke(tool_call['args'])
-                        count += 1
+                        args = tool_call['args']
+                        metrics_list = args.get('metrics', [])
+                        result = submit_risk_metrics.invoke(args)
+                        count += len(metrics_list)
                         tool_messages.append({
                             "role": "tool",
                             "content": result,
                             "tool_call_id": tool_call['id']
                         })
                     except Exception as e:
-                        print(f"  ✗ Failed to submit metric: {e}")
+                        print(f"  ✗ Failed to submit metrics: {e}")
                         tool_messages.append({
                             "role": "tool",
                             "content": f"Error: {e}",
@@ -237,7 +280,7 @@ Paper:
                 messages.append(ToolMessage(content=tm["content"], tool_call_id=tm["tool_call_id"]))
         else:
             print("  No tool calls, prompting to continue or finish...")
-            messages.append(HumanMessage(content="Continue extracting risk metrics or call finish_extraction if done."))
+            messages.append(HumanMessage(content="Submit all metrics using submit_risk_metrics or call finish_extraction if done."))
     
     if iteration >= max_iterations:
         print(f"  ⚠ Reached max iterations ({max_iterations}), stopping extraction")
