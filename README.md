@@ -9,24 +9,24 @@ The system uses a LangGraph workflow to automatically find research papers and e
 ```mermaid
 flowchart TD
     START([START]) --> CQ[create_query]:::ai
-    CQ -->|Generate PubMed query| SP[search_pubmed]:::tool
-    SP -->|Fetch papers| FP[filter_papers]
-    FP -->|Remove checked DOIs| CA[check_abstract]:::ai
+    CQ --> SP[search_pubmed]:::tool
+    SP --> FP[filter_papers]
+    FP --> CA[check_abstract]:::ai
     
-    CA -->|Abstract relevant?| R1{Has DOI?}
-    R1 -->|Yes| DP[download_paper]:::tool
-    R1 -->|No more papers| CQ
-    R1 -->|Check next| CA
+    CA --> R1{route_after_abstract}
+    R1 -->|Relevant paper found| DP[download_paper]:::tool
+    R1 -->|Not relevant, more papers| CA
+    R1 -->|No papers left| CQ
     
-    DP -->|Convert to markdown| R2{Success?}
-    R2 -->|Yes| EI[extract_interactions]:::ai
+    DP --> R2{route_after_download}
+    R2 -->|PDF→MD success| EI[extract_interactions]:::ai
     R2 -->|Failed, more papers| CA
     R2 -->|Failed, no papers| CQ
     
-    EI -->|Extract OR/HR/RR with CI| R3{Enough metrics?}
-    R3 -->|metrics >= min_metrics| DONE([END]):::success
-    R3 -->|More papers to check| CA
-    R3 -->|Need more papers| CQ
+    EI --> R3{route_after_extraction}
+    R3 -->|metrics >= min_metrics| END([END]):::success
+    R3 -->|Need more, have papers| CA
+    R3 -->|Need more, no papers| CQ
     
     %% Styling
     classDef ai fill:#e1f5e1,stroke:#4caf50,stroke-width:2px
@@ -34,15 +34,20 @@ flowchart TD
     classDef success fill:#c8e6c9,stroke:#4caf50,stroke-width:3px
 ```
 
-**Key Components:**
-- **create_query** (AI): Generates PubMed search queries for menopause timing × health outcomes
+**Nodes:**
+- **create_query** (AI): Generates PubMed search queries, adapts if previous queries exhausted
 - **search_pubmed** (Tool): Fetches up to 100 papers from PubMed API
 - **filter_papers**: Removes already-checked DOIs to avoid duplicates
-- **check_abstract** (AI): Evaluates abstract relevance before downloading
-- **download_paper** (Tool): Downloads PDF via DOI and converts to markdown
-- **extract_interactions** (AI): Extracts risk metrics (OR/HR/RR) with 95% CI using tool calls
+- **check_abstract** (AI): Evaluates abstract relevance (yes/no decision)
+- **download_paper** (Tool): Downloads PDF via DOI → converts to markdown using `pymupdf4llm`
+- **extract_interactions** (AI): Uses tool calls to extract risk metrics (OR/HR/RR with 95% CI)
 
-**Loop Behavior:**
-- Continues until `metrics_count >= min_metrics`
-- Tries different queries if current search exhausted
-- Tracks checked DOIs and tried queries to avoid repetition
+**Routing Logic:**
+- **route_after_abstract**: If relevant → download | if more papers → check next | else → new query
+- **route_after_download**: If PDF→MD success → extract | if more papers → check next | else → new query  
+- **route_after_extraction**: If enough metrics → END | if more papers → check next | else → new query
+
+**State Tracking:**
+- `checked_dois`: Prevents re-processing papers
+- `tried_queries`: Enables query diversification
+- `metrics_count`: Tracks progress toward `min_metrics` goal
