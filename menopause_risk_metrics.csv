@@ -10,3 +10,17 @@ per 1-year decrease in age at menopause (Model 1)   ,Cardiovascular Disease (POL
 Postmenopausal vs Perimenopausal                    ,Cardiovascular Disease (POL-SCORE 2015)          ,OR          ,      17.170 ,2.304-127.958 ,10.3390/jcm12227058        ,2023-Nov-13
 Postmenopausal vs perimenopausal status             ,Cardiovascular Disease                           ,OR          ,      17.170 ,2.304-127.958 ,10.3390/jcm12227058        ,2023-Nov-13
 Postmenopausal vs Perimenopausal                    ,Cardiovascular Disease                           ,OR          ,      17.170 ,2.304-127.958 ,10.3390/jcm12227058        ,2023-Nov-13
+Per 1-year decrease in age at menopause,Cardiovascular Disease,HR,1.03,1.02-1.04,10.1016/S2468-2667(19)30155-0,2019-Nov
+Early menopause 40-44 years vs Normal 50-51 years,Cardiovascular Disease,HR,1.30,1.22-1.39,10.1016/S2468-2667(19)30155-0,2019-Nov
+Age <40 vs 50-51 years,Coronary Heart Disease,HR,1.52,1.34-1.74,10.1016/S2468-2667(19)30155-0,2019-Nov
+<40 years vs 50-51 years,Coronary Heart Disease,HR,1.52,1.34-1.74,10.1016/S2468-2667(19)30155-0,2019-Nov
+≥55 years vs 50–51 years,Coronary heart disease,HR,0.90,0.85–0.97,10.1016/S2468-2667(19)30155-0,2019-Nov
+45-49 years vs 50-51 years,Coronary Heart Disease,HR,1.13,1.06-1.20,10.1016/S2468-2667(19)30155-0,2019-Nov
+Age <40 years vs 50-51 years,Stroke,HR,1.72,1.43-2.07,10.1016/S2468-2667(19)30155-0,2019-Nov
+Early menopause 40-44 years vs reference 50-51 years,Stroke,HR,1.32,1.18-1.48,10.1016/S2468-2667(19)30155-0,2019-Nov
+45-49 years vs 50-51 years reference,Stroke,HR,1.09,1.00-1.18,10.1016/S2468-2667(19)30155-0,2019-Nov
+per 1-year decrease in age at natural menopause,Cardiovascular disease,HR,1.03,1.02-1.04,10.1016/S2468-2667(19)30155-0,2019-Nov
+Early: 40-44 years vs Normal: 50-51 years before age 60,Cardiovascular Disease,HR,1.40,1.27-1.54,10.1016/S2468-2667(19)30155-0,2019-Nov
+"Early menopause 40-44 years vs Reference 50-51 years, among women <60 years",First non-fatal cardiovascular disease,HR,1.40,1.27-1.54,10.1016/S2468-2667(19)30155-0,2019-Nov
+45-49 years vs 50-51 years (reference),Cardiovascular Disease before age 60,HR,1.17,1.09-1.25,10.1016/S2468-2667(19)30155-0,2019-Nov
+<40 years vs 50-51 years,Coronary Heart Disease,HR,1.85,1.48-2.10,10.1016/S2468-2667(19)30155-0,2019-Nov
