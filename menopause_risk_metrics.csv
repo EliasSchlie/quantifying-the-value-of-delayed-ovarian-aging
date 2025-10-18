@@ -1,0 +1,12 @@
+menopause_timing_definition                         ,health_outcome                                   ,metric_type ,metric_value ,ci_95         ,reference                  ,date_published
+Early < 45 years vs Normal ≥ 45 years               ,Postoperative atrial fibrillation following CABG ,OR          ,       1.76  ,1.30-2.38     ,10.1186/s12905-025-03941-7 ,2025-Aug-28
+Early < 45 years vs Normal ≥ 45 years               ,Postoperative atrial fibrillation                ,OR          ,       1.85  ,1.38-2.46     ,10.1186/s12905-025-03941-7 ,2025-Aug-28
+Early <45 years vs non-early ≥45 years (unadjusted) ,Postoperative atrial fibrillation after CABG     ,OR          ,       1.85  ,1.38-2.46     ,10.1186/s12905-025-03941-7 ,2025-Aug-28
+per 1-year increase in time since menopause         ,Postoperative atrial fibrillation following CABG ,OR          ,       1.08  ,1.07-1.10     ,10.1186/s12905-025-03941-7 ,2025-Aug-28
+Per 1-year increase in age at menopause             ,All-Cause Mortality                              ,HR          ,       0.99  ,0.98-1.00     ,10.1186/s12905-024-03055-6 ,2024-Apr-05
+Age at menopause (per 1-year increase)              ,Cardiovascular Disease                           ,OR          ,       0.96  ,0.96-0.97     ,10.1186/s12905-024-03055-6 ,2024-Apr-05
+Metabolic Syndrome vs No Metabolic Syndrome         ,Cardiovascular Disease (ASCVD Risk Calculator)   ,OR          ,      13.812 ,4.972-38.373  ,10.3390/jcm12227058        ,2023-Nov-13
+per 1-year decrease in age at menopause (Model 1)   ,Cardiovascular Disease (POL-SCORE 2015)          ,OR          ,       1.382 ,1.200-1.592   ,10.3390/jcm12227058        ,2023-Nov-13
+Postmenopausal vs Perimenopausal                    ,Cardiovascular Disease (POL-SCORE 2015)          ,OR          ,      17.170 ,2.304-127.958 ,10.3390/jcm12227058        ,2023-Nov-13
+Postmenopausal vs perimenopausal status             ,Cardiovascular Disease                           ,OR          ,      17.170 ,2.304-127.958 ,10.3390/jcm12227058        ,2023-Nov-13
+Postmenopausal vs Perimenopausal                    ,Cardiovascular Disease                           ,OR          ,      17.170 ,2.304-127.958 ,10.3390/jcm12227058        ,2023-Nov-13
