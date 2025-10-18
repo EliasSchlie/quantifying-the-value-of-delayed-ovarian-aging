@@ -34,7 +34,7 @@ class GraphState(TypedDict):
 def create_query(state: GraphState) -> dict:
     """AI creates PubMed query for menopause timing and health outcomes"""
     print(f"\n--- Creating query for: {state['disease_of_interest']} ---")
-    return {"query": "10.1016/S2468-2667(19)30155-0"}
+    # return {"query": "10.1016/S2468-2667(19)30155-0"}
     tried = state.get("tried_queries", [])
     
     if tried:
