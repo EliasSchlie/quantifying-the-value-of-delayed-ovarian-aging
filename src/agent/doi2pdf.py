@@ -104,5 +104,6 @@ class PDFFromDOI:
 
 if __name__ == "__main__":
     pdf_from_doi = PDFFromDOI()
+    # path = pdf_from_doi.download("10.1016/S2468-2667(19)30155-0")
     path = pdf_from_doi.download("10.1001/jamacardio.2016.2415")
     print(path)

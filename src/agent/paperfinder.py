@@ -51,15 +51,15 @@ Be creative with terminology:
 - Menopause timing variations (early menopause, premature menopause, age at natural menopause, ANM)
 - Use related terms for the health outcome
 
-Create a concise PubMed search query."""
+Create a concise PubMed search query while focusing on not being too restrictive. Especially if many queries failed already, try to broaden the search up."""
     else:
         prompt = f"""Disease/outcome: {state['disease_of_interest']}
 
 Create a PubMed search query to find studies linking menopause timing (age at menopause, early menopause) to this health outcome.
-Focus on meta-analyses with risk metrics (OR, HR, RR). Include relevant keywords and filters."""
+Focus on meta-analyses with risk metrics (OR, HR, RR). Include relevant keywords while on not being too restrictive."""
     
     response = llm.invoke([
-        SystemMessage(content="You are an expert at crafting PubMed queries. Find studies linking menopause timing to specific health outcomes with quantitative risk metrics."),
+        SystemMessage(content="You are an expert at crafting PubMed queries. You return ONLY the query string, no other text. Whatever text you return will be used as a query in the PubMed API, so it must be a valid query string.\n Your query will be wrappend like this: '({query}) AND \"meta-analysis\"[Publication Type]' to ensure it only returns meta-analyses."),
         HumanMessage(content=prompt)
     ])
     

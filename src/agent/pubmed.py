@@ -105,12 +105,12 @@ class PubMedAPI:
 
 if __name__ == "__main__":
     api = PubMedAPI()
-    papers = api.search("ovarian aging oocyte quality", max_results=5, meta_analysis_only=True)
+    papers = api.search('("menopause timing" OR "age at menopause" OR "early menopause" OR premature menopause OR postmenopause OR"natural menopause") AND ("cardiovascular disease"[mh] OR"cardiovascular system"[mh] OR "coronary heart disease" OR"coronary artery disease" OR "myocardial infarction" OR "heart disease" OR stroke OR CVD)', max_results=100, meta_analysis_only=True)
     for i, paper in enumerate(papers, 1):
-        print(f"\n{i}. {paper['title']}")
-        print(f"   Authors: {', '.join(paper['authors'][:3])}")
-        print(f"   Journal: {paper['journal']} ({paper['pub_date']})")
+        # print(f"\n{i}. {paper['title']}")
+        # print(f"   Authors: {', '.join(paper['authors'][:3])}")
+        # print(f"   Journal: {paper['journal']} ({paper['pub_date']})")
         print(f"   DOI: {paper['doi']}")
-        print(f"   PMID: {paper['pmid']}")
-        print(f"   Abstract: {paper['abstract'][:150]}..." if len(paper['abstract']) > 150 else f"   Abstract: {paper['abstract']}")
+        # print(f"   PMID: {paper['pmid']}")
+        # print(f"   Abstract: {paper['abstract'][:150]}..." if len(paper['abstract']) > 150 else f"   Abstract: {paper['abstract']}")
 
