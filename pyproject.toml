@@ -11,8 +11,11 @@ dependencies = [
     "langchain-openai>=0.3.35",
     "langchain[openai]>=0.3.27",
     "langgraph>=0.6.10",
+    "markdown-pdf>=1.10",
+    "markdownify>=1.2.0",
     "marker-pdf>=1.10.1",
     "mlflow>=3.5.0",
     "pymupdf4llm>=0.0.27",
     "python-dotenv>=1.1.1",
+    "weasyprint>=66.0",
 ]

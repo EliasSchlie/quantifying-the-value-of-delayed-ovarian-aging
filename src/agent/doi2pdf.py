@@ -3,9 +3,13 @@ import re
 import json
 import urllib.request
 import urllib.parse
+import sys
 from typing import Optional
 from dotenv import load_dotenv
 load_dotenv()
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+from paperHTML2pdf import html_to_pdf
 
 
 class PDFFromDOI:
@@ -13,6 +17,8 @@ class PDFFromDOI:
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
         self.brightdata_api_key = brightdata_api_key or os.environ.get("BRIGHT_WEB_UNLOCKER_KEY")
+        if not self.brightdata_api_key:
+            raise ValueError("Bright Data API key is not set")
         self.unpaywall_email = unpaywall_email
 
     def download(self, doi: str, filename: str = None) -> Optional[str]:
@@ -22,8 +28,7 @@ class PDFFromDOI:
         if self._is_arxiv_doi(doi):
             pdf_url = self._get_arxiv_pdf_url(doi)
             if pdf_url and self._download_pdf_direct(pdf_url, path):
-                self._validate_pdf(path)
-                return path
+                return self._detect_and_fix_format(path)
         
         # Fallback to Unpaywall
         pdf_url = self._get_pdf_url_from_unpaywall(doi)
@@ -31,11 +36,9 @@ class PDFFromDOI:
             raise FileNotFoundError(f"No open-access PDF found for DOI: {doi}")
         # Try Bright Data first, fallback to direct download
         if self._download_pdf_via_brightdata(pdf_url, path):
-            self._validate_pdf(path)
-            return path
+            return self._detect_and_fix_format(path)
         elif self._download_pdf_direct(pdf_url, path):
-            self._validate_pdf(path)
-            return path
+            return self._detect_and_fix_format(path)
         raise RuntimeError(f"Failed to download PDF from: {pdf_url}")
 
     def _get_pdf_url_from_unpaywall(self, doi: str) -> str:
@@ -92,12 +95,20 @@ class PDFFromDOI:
         arxiv_id = doi.split("arXiv.")[-1]
         return f"https://arxiv.org/pdf/{arxiv_id}.pdf"
     
-    def _validate_pdf(self, path: str) -> None:
-        """Check if file is actually a PDF, raise error if not"""
+    def _detect_and_fix_format(self, path: str) -> str:
+        """Detect if file is PDF or HTML, convert HTML to PDF if needed"""
         with open(path, "rb") as f:
-            if f.read(5) != b"%PDF-":
-                os.remove(path)
-                raise RuntimeError(f"Downloaded file is HTML, not PDF (likely paywalled)")
+            header = f.read(5)
+        
+        if header == b"%PDF-":
+            return path
+        else:
+            # It's HTML, rename and convert to PDF
+            html_path = path.replace(".pdf", ".html")
+            os.rename(path, html_path)
+            print(f"Converting HTML to PDF via Markdown...")
+            pdf_path = html_to_pdf(html_path)
+            return pdf_path
     
     def _sanitize_filename(self, filename: str) -> str:
         return re.sub(r"[\\/*?:\"<>|]", "_", filename)
@@ -105,5 +116,6 @@ class PDFFromDOI:
 if __name__ == "__main__":
     pdf_from_doi = PDFFromDOI()
     # path = pdf_from_doi.download("10.1016/S2468-2667(19)30155-0")
-    path = pdf_from_doi.download("10.1001/jamacardio.2016.2415")
+    # path = pdf_from_doi.download("10.1001/jamacardio.2016.2415")
+    path = pdf_from_doi.download("10.1155/2021/6636856")
     print(path)
