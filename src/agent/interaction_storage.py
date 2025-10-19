@@ -14,7 +14,7 @@ class InteractionStorage:
                 writer.writerow([
                     'menopause_timing_definition', 'health_outcome', 'metric_type', 'metric_value', 'ci_95', 
                     'reference', 'date_published', 'n_of_included_studies', 'sample_size', 'geography', 
-                    'confounder_vars', 'authors'
+                    'confounder_vars', 'authors', 'robis_categorical_risk', 'robis_quality_score'
                 ])
     
     def add_risk_metric(self, menopause_timing: str, health_outcome: str, metric_type: str, value: str, ci_95: str, 
@@ -43,7 +43,9 @@ class InteractionStorage:
                 clean_text(metadata.get('sample_size', '')),
                 clean_text(metadata.get('geography', '')),
                 clean_text(metadata.get('confounder_vars', '')),
-                clean_text(metadata.get('authors', ''))
+                clean_text(metadata.get('authors', '')),
+                clean_text(metadata.get('robis_categorical_risk', '')),
+                clean_text(metadata.get('robis_quality_score', ''))
             ])
         return f"Risk metric stored: {health_outcome} ({metric_type}={value}, CI={ci_95})"
 

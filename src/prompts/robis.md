@@ -61,6 +61,8 @@ Answer these signaling questions on interpretation:
 A: Did the interpretation address all concerns from Phase 2? (E.g., limitations discussed in the discussion section.)
 B: Was the relevance of included studies to the review question considered?
 C: Did the reviewers avoid emphasizing results based on statistical significance alone? (E.g., balanced discussion, not p-hacking via over-relying on p-value <0.05.)
+categorical_risk:
 Overall Risk Rating: Low (all Phase 3 Yes/Probably Yes and Phase 2 mostly Low; suitable for high-quality extraction), High (unaddressed concerns or overemphasis), or Unclear (info gaps).
 
-Summarize: Provide the overall risk, a numeric validity score (0-10: 3 points per Low domain, 1 for Unclear, 0 for High; +1 if sample size >100,000, +1 if number of included studies >10, +1 if I² <50%), and any recommendations for the paper's use in modeling.
+quality_score:
+Summarize: Provide the overall risk, a numeric validity score (0-10: 3 points per Low domain, 1 for Unclear, 0 for High; +1 if sample size >100,000, +1 if number of included studies >10, +1 if I² <50%)

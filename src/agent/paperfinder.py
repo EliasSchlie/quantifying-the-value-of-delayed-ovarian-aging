@@ -27,6 +27,8 @@ class GraphState(TypedDict):
     paper_md: str
     metrics_count: int
     min_metrics: int
+    robis_categorical_risk: str
+    robis_quality_score: str
 
 # Node functions
 def create_query(state: GraphState) -> dict:
@@ -69,7 +71,7 @@ Focus on meta-analyses with risk metrics (OR, HR, RR). Include relevant keywords
 def search_pubmed(state: GraphState) -> dict:
     """Search PubMed API"""
     print(f"\n--- Searching PubMed: {state['query']} ---")
-    papers = pubmed_api.search(state['query'], max_results=100, meta_analysis_only=True)
+    papers = pubmed_api.search(state['query'], max_results=500, meta_analysis_only=True)
     print(f"Found {len(papers)} papers")
     return {"papers": papers}
 
@@ -184,6 +186,87 @@ Paper:
     
     return {"current_paper": updated_paper}
 
+def evaluate_robis(state: GraphState) -> dict:
+    """Evaluate ROBIS risk of bias for the paper"""
+    if not state["paper_md"]:
+        return {"robis_categorical_risk": "N/A", "robis_quality_score": "N/A"}
+    
+    print("\n--- Evaluating ROBIS score ---")
+    
+    # Load ROBIS prompt
+    from pathlib import Path
+    robis_path = Path(__file__).parent.parent / "prompts" / "robis.md"
+    with open(robis_path, 'r') as f:
+        robis_prompt = f.read()
+    
+    from langchain_core.tools import tool
+    
+    robis_scores = {}
+    
+    @tool
+    def submit_ROBIS_score(categorical_risk: str, quality_score: int) -> str:
+        """Submit the ROBIS evaluation scores for the paper.
+        
+        Args:
+            categorical_risk: Overall risk of bias rating. Must be one of: "Low", "High", or "Unclear"
+            quality_score: Numeric validity score from 0-10 based on ROBIS criteria
+        """
+        nonlocal robis_scores
+        robis_scores['categorical_risk'] = categorical_risk
+        robis_scores['quality_score'] = str(quality_score)
+        return f"✓ ROBIS scores submitted: Risk={categorical_risk}, Quality={quality_score}/10"
+    
+    llm_with_tool = llm.bind_tools([submit_ROBIS_score])
+    
+    messages = [
+        SystemMessage(content=robis_prompt),
+        HumanMessage(content=state['paper_md'])
+    ]
+    
+    max_iterations = 10
+    iteration = 0
+    
+    while not robis_scores and iteration < max_iterations:
+        iteration += 1
+        print(f"  ROBIS evaluation iteration {iteration}...")
+        
+        response = llm_with_tool.invoke(messages)
+        messages.append(response)
+        
+        if hasattr(response, 'tool_calls') and response.tool_calls:
+            for tool_call in response.tool_calls:
+                if tool_call['name'] == 'submit_ROBIS_score':
+                    try:
+                        result = submit_ROBIS_score.invoke(tool_call['args'])
+                        print(f"  {result}")
+                        from langchain_core.messages import ToolMessage
+                        messages.append(ToolMessage(content=result, tool_call_id=tool_call['id']))
+                    except Exception as e:
+                        print(f"  ✗ Failed to submit ROBIS scores: {e}")
+                        error_msg = f"Error: {e}. Please resubmit."
+                        from langchain_core.messages import ToolMessage
+                        messages.append(ToolMessage(content=error_msg, tool_call_id=tool_call['id']))
+        else:
+            messages.append(HumanMessage(content="Please complete the ROBIS evaluation and submit your scores using submit_ROBIS_score."))
+    
+    if not robis_scores:
+        print("  ⚠ Failed to get ROBIS scores, using N/A")
+        robis_scores = {'categorical_risk': 'N/A', 'quality_score': 'N/A'}
+    
+    # Update current_paper with ROBIS scores
+    paper = state['current_paper']
+    updated_paper = {**paper, 
+                    'robis_categorical_risk': robis_scores.get('categorical_risk', 'N/A'),
+                    'robis_quality_score': robis_scores.get('quality_score', 'N/A')}
+    
+    print(f"✓ ROBIS evaluation complete: Risk={robis_scores['categorical_risk']}, Quality={robis_scores['quality_score']}")
+    
+    return {
+        "current_paper": updated_paper,
+        "robis_categorical_risk": robis_scores['categorical_risk'],
+        "robis_quality_score": robis_scores['quality_score']
+    }
+
 def extract_interactions(state: GraphState) -> dict:
     """AI extracts risk metrics from paper using tool calls, looping until done"""
     if not state["paper_md"]:
@@ -201,7 +284,9 @@ def extract_interactions(state: GraphState) -> dict:
         'sample_size': paper.get('sample_size', ''),
         'geography': paper.get('geography', ''),
         'confounder_vars': paper.get('confounder_vars', ''),
-        'authors': paper.get('authors', '')
+        'authors': paper.get('authors', ''),
+        'robis_categorical_risk': paper.get('robis_categorical_risk', ''),
+        'robis_quality_score': paper.get('robis_quality_score', '')
     }
     
     extraction_complete = False
@@ -376,8 +461,17 @@ def route_after_download(state: GraphState) -> Literal["extract_metadata", "chec
     else:
         return "create_query"
 
-def route_after_metadata(state: GraphState) -> Literal["extract_interactions", "check_abstract", "create_query"]:
+def route_after_metadata(state: GraphState) -> Literal["evaluate_robis", "check_abstract", "create_query"]:
     """Route after metadata extraction"""
+    if state.get("paper_md") and state.get("current_paper", {}).get("doi"):
+        return "evaluate_robis"
+    elif state.get("papers", []):
+        return "check_abstract"
+    else:
+        return "create_query"
+
+def route_after_robis(state: GraphState) -> Literal["extract_interactions", "check_abstract", "create_query"]:
+    """Route after ROBIS evaluation"""
     if state.get("paper_md") and state.get("current_paper", {}).get("doi"):
         return "extract_interactions"
     elif state.get("papers", []):
@@ -412,6 +506,7 @@ workflow.add_node("filter_papers", filter_papers)
 workflow.add_node("check_abstract", check_abstract)
 workflow.add_node("download_paper", download_paper)
 workflow.add_node("extract_metadata", extract_metadata)
+workflow.add_node("evaluate_robis", evaluate_robis)
 workflow.add_node("extract_interactions", extract_interactions)
 
 # Add edges
@@ -443,6 +538,16 @@ workflow.add_conditional_edges(
 workflow.add_conditional_edges(
     "extract_metadata",
     route_after_metadata,
+    {
+        "evaluate_robis": "evaluate_robis",
+        "check_abstract": "check_abstract",
+        "create_query": "create_query"
+    }
+)
+
+workflow.add_conditional_edges(
+    "evaluate_robis",
+    route_after_robis,
     {
         "extract_interactions": "extract_interactions",
         "check_abstract": "check_abstract",
