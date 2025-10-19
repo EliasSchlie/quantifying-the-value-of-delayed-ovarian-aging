@@ -69,7 +69,7 @@ Focus on meta-analyses with risk metrics (OR, HR, RR). Include relevant keywords
 def search_pubmed(state: GraphState) -> dict:
     """Search PubMed API"""
     print(f"\n--- Searching PubMed: {state['query']} ---")
-    papers = pubmed_api.search(state['query'], max_results=100)
+    papers = pubmed_api.search(state['query'], max_results=100, meta_analysis_only=True)
     print(f"Found {len(papers)} papers")
     return {"papers": papers}
 
@@ -123,6 +123,67 @@ def download_paper(state: GraphState) -> dict:
         print(f"Error processing paper: {e}")
         return {"paper_md": "", "current_paper": {}}
 
+def extract_metadata(state: GraphState) -> dict:
+    """Extract metadata from paper: n_of_included_studies, sample_size, geography, confounder_vars"""
+    if not state["paper_md"]:
+        return {}
+    
+    print("\n--- Extracting paper metadata ---")
+    
+    paper = state["current_paper"]
+    
+    prompt = f"""Analyze this research paper and extract the following metadata:
+
+1. n_of_included_studies: The number of individual studies included in the meta-analysis (if applicable). Return just the number as a string (e.g., "12"). If not a meta-analysis or not reported, return "N/A".
+
+2. sample_size: The total number of participants across all included studies. Return just the number as a string (e.g., "324567"). If not reported, return "N/A".
+
+3. geography: The geographic focus or origins of the included studies (e.g., countries or regions). Return as a comma-separated string (e.g., "USA, UK, Europe"). If not reported, return "N/A".
+
+4. confounder_vars: The variables adjusted for in the analysis. Return as a comma-separated string (e.g., "Age, BMI, smoking status, socioeconomic status, hormone replacement therapy"). If not reported, return "N/A".
+
+Return your response in this exact format (one per line):
+n_of_included_studies: <value>
+sample_size: <value>
+geography: <value>
+confounder_vars: <value>
+
+Paper:
+{state['paper_md']}"""
+    
+    response = llm.invoke([
+        SystemMessage(content="You are a research paper metadata extractor. Extract only the requested information from meta-analyses and systematic reviews. Be precise and concise."),
+        HumanMessage(content=prompt)
+    ])
+    
+    content = response.content.strip()
+    print(f"Metadata extraction response:\n{content}")
+    
+    # Parse the response
+    metadata = {}
+    for line in content.split('\n'):
+        if ':' in line:
+            key, value = line.split(':', 1)
+            key = key.strip()
+            value = value.strip()
+            metadata[key] = value
+    
+    # Update current_paper with metadata
+    updated_paper = {**paper}
+    updated_paper.update({
+        'n_of_included_studies': metadata.get('n_of_included_studies', 'N/A'),
+        'sample_size': metadata.get('sample_size', 'N/A'),
+        'geography': metadata.get('geography', 'N/A'),
+        'confounder_vars': metadata.get('confounder_vars', 'N/A'),
+        'abstract': paper.get('abstract', ''),
+        'authors': paper.get('authors', ''),
+        'full_text_md': state['paper_md']
+    })
+    
+    print(f"✓ Extracted metadata: {metadata.get('n_of_included_studies', 'N/A')} studies, {metadata.get('sample_size', 'N/A')} participants")
+    
+    return {"current_paper": updated_paper}
+
 def extract_interactions(state: GraphState) -> dict:
     """AI extracts risk metrics from paper using tool calls, looping until done"""
     if not state["paper_md"]:
@@ -130,8 +191,18 @@ def extract_interactions(state: GraphState) -> dict:
     
     print("\n--- Extracting risk metrics ---")
     
-    doi = state['current_paper'].get('doi', '')
-    pub_date = state['current_paper'].get('pub_date', '')
+    paper = state['current_paper']
+    doi = paper.get('doi', '')
+    pub_date = paper.get('pub_date', '')
+    
+    # Prepare paper metadata for automatic inclusion
+    paper_metadata = {
+        'n_of_included_studies': paper.get('n_of_included_studies', ''),
+        'sample_size': paper.get('sample_size', ''),
+        'geography': paper.get('geography', ''),
+        'confounder_vars': paper.get('confounder_vars', ''),
+        'authors': paper.get('authors', '')
+    }
     
     extraction_complete = False
     
@@ -179,7 +250,8 @@ def extract_interactions(state: GraphState) -> dict:
                     metric['metric_value'],
                     metric['ci_95'],
                     doi,
-                    pub_date
+                    pub_date,
+                    paper_metadata
                 )
                 output += f"✓ Stored: {metric['health_outcome']} | {metric['metric_type']}={metric['metric_value']} (CI: {metric['ci_95']})\n"
                 submitted += 1
@@ -295,9 +367,18 @@ def route_after_abstract(state: GraphState) -> Literal["download_paper", "check_
     else:
         return "create_query"
 
-def route_after_download(state: GraphState) -> Literal["extract_interactions", "check_abstract", "create_query"]:
+def route_after_download(state: GraphState) -> Literal["extract_metadata", "check_abstract", "create_query"]:
     """Route based on download success"""
     if state.get("paper_md"):
+        return "extract_metadata"
+    elif state.get("papers", []):
+        return "check_abstract"
+    else:
+        return "create_query"
+
+def route_after_metadata(state: GraphState) -> Literal["extract_interactions", "check_abstract", "create_query"]:
+    """Route after metadata extraction"""
+    if state.get("paper_md") and state.get("current_paper", {}).get("doi"):
         return "extract_interactions"
     elif state.get("papers", []):
         return "check_abstract"
@@ -330,6 +411,7 @@ workflow.add_node("search_pubmed", search_pubmed)
 workflow.add_node("filter_papers", filter_papers)
 workflow.add_node("check_abstract", check_abstract)
 workflow.add_node("download_paper", download_paper)
+workflow.add_node("extract_metadata", extract_metadata)
 workflow.add_node("extract_interactions", extract_interactions)
 
 # Add edges
@@ -351,6 +433,16 @@ workflow.add_conditional_edges(
 workflow.add_conditional_edges(
     "download_paper",
     route_after_download,
+    {
+        "extract_metadata": "extract_metadata",
+        "check_abstract": "check_abstract",
+        "create_query": "create_query"
+    }
+)
+
+workflow.add_conditional_edges(
+    "extract_metadata",
+    route_after_metadata,
     {
         "extract_interactions": "extract_interactions",
         "check_abstract": "check_abstract",

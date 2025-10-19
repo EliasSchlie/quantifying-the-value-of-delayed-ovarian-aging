@@ -9,14 +9,41 @@ class InteractionStorage:
     def _ensure_file_exists(self):
         """Create CSV file with headers if it doesn't exist"""
         if not self.csv_path.exists():
-            with open(self.csv_path, 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(['menopause_timing_definition', 'health_outcome', 'metric_type', 'metric_value', 'ci_95', 'reference', 'date_published'])
+            with open(self.csv_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+                writer.writerow([
+                    'menopause_timing_definition', 'health_outcome', 'metric_type', 'metric_value', 'ci_95', 
+                    'reference', 'date_published', 'n_of_included_studies', 'sample_size', 'geography', 
+                    'confounder_vars', 'authors'
+                ])
     
-    def add_risk_metric(self, menopause_timing: str, health_outcome: str, metric_type: str, value: str, ci_95: str, reference: str, date_published: str) -> str:
-        """Add a risk metric to the CSV file"""
-        with open(self.csv_path, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow([menopause_timing, health_outcome, metric_type, value, ci_95, reference, date_published])
+    def add_risk_metric(self, menopause_timing: str, health_outcome: str, metric_type: str, value: str, ci_95: str, 
+                       reference: str, date_published: str, paper_metadata: dict = None) -> str:
+        """Add a risk metric to the CSV file with automatic paper metadata"""
+        metadata = paper_metadata or {}
+        
+        # Clean text fields to prevent CSV issues
+        def clean_text(text):
+            if not text:
+                return ''
+            # Replace problematic characters but keep the text readable
+            return str(text).replace('\x00', '').replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
+        
+        with open(self.csv_path, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+            writer.writerow([
+                clean_text(menopause_timing),
+                clean_text(health_outcome),
+                clean_text(metric_type),
+                clean_text(value),
+                clean_text(ci_95),
+                clean_text(reference),
+                clean_text(date_published),
+                clean_text(metadata.get('n_of_included_studies', '')),
+                clean_text(metadata.get('sample_size', '')),
+                clean_text(metadata.get('geography', '')),
+                clean_text(metadata.get('confounder_vars', '')),
+                clean_text(metadata.get('authors', ''))
+            ])
         return f"Risk metric stored: {health_outcome} ({metric_type}={value}, CI={ci_95})"
 
