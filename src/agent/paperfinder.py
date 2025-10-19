@@ -27,6 +27,7 @@ class GraphState(TypedDict):
     paper_md: str
     metrics_count: int
     min_metrics: int
+    max_papers: int
     robis_categorical_risk: str
     robis_quality_score: str
 
@@ -435,7 +436,7 @@ Paper:
                 messages.append(ToolMessage(content=tm["content"], tool_call_id=tm["tool_call_id"]))
         else:
             print("  No tool calls, prompting to continue or finish...")
-            messages.append(HumanMessage(content="Submit all metrics using submit_risk_metrics or call finish_extraction if done."))
+            messages.append(HumanMessage(content="Submit all metrics using the submit_risk_metrics tool or call the finish_extraction tool if done. (answering in XML is not enough! You need to use the tool calls!)"))
     
     if iteration >= max_iterations:
         print(f"  ⚠ Reached max iterations ({max_iterations}), stopping extraction")
@@ -480,14 +481,19 @@ def route_after_robis(state: GraphState) -> Literal["extract_interactions", "che
         return "create_query"
 
 def route_after_extraction(state: GraphState) -> Literal["check_abstract", "create_query", END]:
-    """Route based on metrics count"""
+    """Route based on metrics count or max papers checked"""
     count = state.get("metrics_count", 0)
     min_count = state.get("min_metrics", 5)
+    papers_checked = len(state.get("checked_dois", []))
+    max_papers = state.get("max_papers", float('inf'))
     
-    print(f"\n--- Risk Metrics: {count}/{min_count} ---")
+    print(f"\n--- Risk Metrics: {count}/{min_count} | Papers Checked: {papers_checked}/{max_papers} ---")
     
     if count >= min_count:
         print("✓ Enough metrics found!")
+        return END
+    elif papers_checked >= max_papers:
+        print(f"✓ Max papers limit reached ({max_papers})")
         return END
     elif state.get("papers", []):
         print("→ Checking next paper")
@@ -570,16 +576,43 @@ agent = workflow.compile()
 agent = agent.with_config(recursion_limit=400)
 
 if __name__ == "__main__":
-    result = agent.invoke(
-        {
-            "disease_of_interest": "cardiovascular disease",
-            "metrics_count": 0,
-            "min_metrics": 10,
-            "checked_dois": [],
-            "tried_queries": []
-        },
-        {"recursion_limit": 400}
-    )
-    print(f"\n\n=== FINAL RESULT ===")
-    print(f"Total risk metrics found: {result.get('metrics_count', 0)}")
-    print(f"Papers checked: {len(result.get('checked_dois', []))}")
+    testing = True
+    go_through_all_diseases = False
+
+
+    if testing:
+        result = agent.invoke(
+            {
+                "disease_of_interest": "cardiovascular disease",
+                "metrics_count": 0,
+                "min_metrics": 10,
+                "max_papers": 50,
+                "checked_dois": [],
+                "tried_queries": []
+            },
+            {"recursion_limit": 400}
+        )
+        print(f"\n\n=== FINAL RESULT ===")
+        print(f"Total risk metrics found: {result.get('metrics_count', 0)}")
+        print(f"Papers checked: {len(result.get('checked_dois', []))}")
+    
+    diseases = ["cardiovascular disease", "stroke", "type 2 diabetes", "breast cancer", "prostate cancer", "ovarian cancer", "endometrial cancer", "uterine cancer", "pancreatic cancer", "lung cancer", "colorectal cancer", "esophageal cancer", "gastric cancer", "liver cancer", "gallbladder cancer", "thyroid cancer", "melanoma", "multiple myeloma", "leukemia", "lymphoma", "multiple myeloma", "leukemia", "lymphoma"]
+
+    if go_through_all_diseases:
+        for disease in diseases:
+            print(f"\n\n=== STARTING for disease: {disease} ===")
+            result = agent.invoke(
+                {
+                    "disease_of_interest": disease,
+                    "metrics_count": 0,
+                    "min_metrics": 1000, # High enough to never trigger
+                    "max_papers": 300,
+                    "checked_dois": [],
+                    "tried_queries": []
+                },
+                {"recursion_limit": 400}
+            )
+            print(f"\n\n=== RESULT for disease: {disease} ===")
+            print(f"Total risk metrics found: {result.get('metrics_count', 0)}")
+            print(f"Papers checked: {len(result.get('checked_dois', []))}")
+
