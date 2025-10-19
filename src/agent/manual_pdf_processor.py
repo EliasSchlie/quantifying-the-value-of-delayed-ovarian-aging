@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 from pubmed import PubMedAPI
-from paperfinder import extract_interactions
+from paperfinder import extract_metadata, evaluate_robis, extract_interactions
 import pymupdf4llm
 import os
 import re
@@ -83,9 +83,20 @@ def process_manual_pdfs(folder: str, disease_of_interest: str = "cardiovascular 
             "current_paper": paper,
             "paper_md": md,
             "metrics_count": metrics_count,
-            "min_metrics": 0
+            "min_metrics": 0,
+            "robis_categorical_risk": "",
+            "robis_quality_score": ""
         }
         
+        # Step 1: Extract metadata
+        result = extract_metadata(state)
+        state.update(result)
+        
+        # Step 2: Evaluate ROBIS
+        result = evaluate_robis(state)
+        state.update(result)
+        
+        # Step 3: Extract interactions
         result = extract_interactions(state)
         metrics_count = result["metrics_count"]
         print(f"✓ Paper processed. Total metrics: {metrics_count}")

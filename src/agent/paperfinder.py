@@ -277,6 +277,7 @@ def extract_interactions(state: GraphState) -> dict:
     
     paper = state['current_paper']
     doi = paper.get('doi', '')
+    doi_url = f"https://doi.org/{doi}" if doi else ""
     pub_date = paper.get('pub_date', '')
     
     # Prepare paper metadata for automatic inclusion
@@ -330,12 +331,13 @@ def extract_interactions(state: GraphState) -> dict:
         for metric in metrics:
             try:
                 interaction_storage.add_risk_metric(
+                    state['disease_of_interest'],
                     metric['menopause_timing_definition'],
                     metric['health_outcome'],
                     metric['metric_type'],
                     metric['metric_value'],
                     metric['ci_95'],
-                    doi,
+                    doi_url,
                     pub_date,
                     paper_metadata
                 )
@@ -576,8 +578,8 @@ agent = workflow.compile()
 agent = agent.with_config(recursion_limit=400)
 
 if __name__ == "__main__":
-    testing = True
-    go_through_all_diseases = False
+    testing = False
+    go_through_all_diseases = True
 
 
     if testing:
@@ -596,7 +598,15 @@ if __name__ == "__main__":
         print(f"Total risk metrics found: {result.get('metrics_count', 0)}")
         print(f"Papers checked: {len(result.get('checked_dois', []))}")
     
-    diseases = ["cardiovascular disease", "stroke", "type 2 diabetes", "breast cancer", "prostate cancer", "ovarian cancer", "endometrial cancer", "uterine cancer", "pancreatic cancer", "lung cancer", "colorectal cancer", "esophageal cancer", "gastric cancer", "liver cancer", "gallbladder cancer", "thyroid cancer", "melanoma", "multiple myeloma", "leukemia", "lymphoma", "multiple myeloma", "leukemia", "lymphoma"]
+    diseases = [
+        "All Cause Mortality",
+        "Type 2 Diabetes",
+        "Cardiovascular Disease",
+        "All Cause Dementia",
+        "Osteoporosis & Fractures",
+        "Breast Cancer",
+        "Endometrial/ Ovarian Cancer"
+    ]
 
     if go_through_all_diseases:
         for disease in diseases:
@@ -615,4 +625,3 @@ if __name__ == "__main__":
             print(f"\n\n=== RESULT for disease: {disease} ===")
             print(f"Total risk metrics found: {result.get('metrics_count', 0)}")
             print(f"Papers checked: {len(result.get('checked_dois', []))}")
-

@@ -33,17 +33,22 @@ class PubMedAPI:
         return [id_elem.text for id_elem in root.findall(".//Id")]
 
     def _fetch_details(self, pmids: list[str]) -> list[dict]:
-        params = urllib.parse.urlencode({
-            "db": "pubmed",
-            "id": ",".join(pmids),
-            "retmode": "xml",
-            "email": self.email,
-            "tool": self.tool
-        })
-        url = f"{self.base_url}/efetch.fcgi?{params}"
-        with urllib.request.urlopen(url, timeout=60) as resp:
-            root = ET.fromstring(resp.read().decode("utf-8"))
-        return [self._parse_article(art) for art in root.findall(".//PubmedArticle")]
+        batch_size = 200
+        all_articles = []
+        for i in range(0, len(pmids), batch_size):
+            batch = pmids[i:i + batch_size]
+            params = urllib.parse.urlencode({
+                "db": "pubmed",
+                "id": ",".join(batch),
+                "retmode": "xml",
+                "email": self.email,
+                "tool": self.tool
+            })
+            url = f"{self.base_url}/efetch.fcgi?{params}"
+            with urllib.request.urlopen(url, timeout=60) as resp:
+                root = ET.fromstring(resp.read().decode("utf-8"))
+            all_articles.extend(root.findall(".//PubmedArticle"))
+        return [self._parse_article(art) for art in all_articles]
 
     def _parse_article(self, article: ET.Element) -> dict:
         medline = article.find(".//MedlineCitation")

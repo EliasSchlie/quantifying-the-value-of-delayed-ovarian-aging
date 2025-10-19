@@ -12,12 +12,12 @@ class InteractionStorage:
             with open(self.csv_path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f, quoting=csv.QUOTE_ALL)
                 writer.writerow([
-                    'menopause_timing_definition', 'health_outcome', 'metric_type', 'metric_value', 'ci_95', 
+                    'disease', 'menopause_timing_definition', 'health_outcome', 'metric_type', 'metric_value', 'ci_95', 
                     'reference', 'date_published', 'n_of_included_studies', 'sample_size', 'geography', 
                     'confounder_vars', 'authors', 'robis_categorical_risk', 'robis_quality_score'
                 ])
     
-    def add_risk_metric(self, menopause_timing: str, health_outcome: str, metric_type: str, value: str, ci_95: str, 
+    def add_risk_metric(self, disease: str, menopause_timing: str, health_outcome: str, metric_type: str, value: str, ci_95: str, 
                        reference: str, date_published: str, paper_metadata: dict = None) -> str:
         """Add a risk metric to the CSV file with automatic paper metadata"""
         metadata = paper_metadata or {}
@@ -32,6 +32,7 @@ class InteractionStorage:
         with open(self.csv_path, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f, quoting=csv.QUOTE_ALL)
             writer.writerow([
+                clean_text(disease),
                 clean_text(menopause_timing),
                 clean_text(health_outcome),
                 clean_text(metric_type),
