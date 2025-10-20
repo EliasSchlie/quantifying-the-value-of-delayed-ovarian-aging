@@ -305,7 +305,7 @@ def extract_interactions(state: GraphState) -> dict:
         
         Args:
             metrics: List of risk metrics, where each metric is a dict with keys:
-                - menopause_timing_definition: Specific numeric age buckets that were compared
+                - menopause_timing_definition: Specific NUMERIC age buckets that were compared (replace fuzzy wordings like "early", "natural", "late" with their numeric definitions)
                 - health_outcome: Specific health outcome
                 - metric_type: Type of metric (OR, HR, or RR)
                 - metric_value: The numerical value
@@ -362,12 +362,12 @@ def extract_interactions(state: GraphState) -> dict:
     
     llm_with_tools = llm.bind_tools([submit_risk_metrics, finish_extraction])
     
-    initial_prompt = f"""Analyze this paper and extract ALL risk metrics (OR, HR, RR) linking menopause timing to health outcomes.
+    metric_extraction_prompt = f"""Analyze this paper and extract ALL risk metrics (OR, HR, RR) linking menopause timing to health outcomes.
 
 Target outcome: {state['disease_of_interest']}
 
 For EACH risk metric found, extract:
-1. menopause_timing_definition: Specific numeric age buckets that were compared (e.g., "<40 vs 50-55", "40-50 vs >=51","per 1-year decrease in ANM")
+1. menopause_timing_definition: Specific numeric age buckets that were compared (replace fuzzy wordings like "early", "natural", "late" with their numeric definitions) (e.g., "<40 vs 50-55", "40-50 vs >=51", "per 1-year decrease in ANM")
 2. health_outcome: Specific health outcome (e.g., "Breast Cancer (adjusted)", "Type 2 Diabetes", "Osteoporosis & Fractures (unadjusted)")
 3. metric_type: OR, HR, or RR
 4. metric_value: The numerical value (e.g., "1.45", "2.1")
@@ -384,7 +384,7 @@ Paper:
     
     messages = [
         SystemMessage(content="You are a scientific paper analyzer. Extract ALL risk metrics (OR, HR, RR) with their 95% CI. Submit all metrics in one call using the submit_risk_metrics tool. Call finish_extraction when done."),
-        HumanMessage(content=initial_prompt)
+        HumanMessage(content=metric_extraction_prompt)
     ]
     
     count = state.get("metrics_count", 0)
