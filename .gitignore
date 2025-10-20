@@ -8,6 +8,7 @@
 mlruns
 mlruns/*
 .pytest_cache
+failed_downloads.csv
 # Ignore LaTeX auxiliary files
 *.aux
 *.bbl

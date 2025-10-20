@@ -11,10 +11,13 @@ from interaction_storage import InteractionStorage
 from langchain_core.tools import tool
 from typing import List, Dict
 from pathlib import Path
+import csv
+import os
 
 load_dotenv()
 
-llm = ChatNebius(model="deepseek-ai/DeepSeek-R1-0528")
+llm = ChatNebius(model="Qwen/Qwen3-235B-A22B-Instruct-2507")
+reasoning_llm = ChatNebius(model="deepseek-ai/DeepSeek-R1-0528")
 pubmed_api = PubMedAPI()
 pdf_from_doi = PDFFromDOI()
 interaction_storage = InteractionStorage()
@@ -31,6 +34,7 @@ class GraphState(TypedDict):
     metrics_count: int
     min_metrics: int
     max_papers: int
+    max_queries: int
     robis_categorical_risk: str
     robis_quality_score: str
 
@@ -116,7 +120,7 @@ def download_paper(state: GraphState) -> dict:
     doi = paper.get("doi")
     
     if not doi:
-        return {"paper_md": "", "current_paper": {}}
+        return {"paper_md": ""}
     
     print(f"\n--- Downloading DOI: {doi} ---")
     
@@ -124,10 +128,14 @@ def download_paper(state: GraphState) -> dict:
         path = pdf_from_doi.download(doi)
         md = pymupdf4llm.to_markdown(str(path))
         print(f"Successfully converted to markdown ({len(md)} chars)")
-        return {"paper_md": md}
+        if md and len(md) > 7000:
+            return {"paper_md": md}
+        else:
+            print(f"Markdown too short ({len(md)} chars). Skipping.")
+            return {"paper_md": ""}
     except Exception as e:
         print(f"Error processing paper: {e}")
-        return {"paper_md": "", "current_paper": {}}
+        return {"paper_md": ""}
 
 def extract_metadata(state: GraphState) -> dict:
     """Extract metadata from paper: n_of_included_studies, sample_size, geography, confounder_vars"""
@@ -439,40 +447,95 @@ Paper:
     
     return {"metrics_count": count, "current_paper": {}, "paper_md": ""}
 
+def track_failed_download(state: GraphState) -> dict:
+    """Track failed downloads to CSV"""
+    print("Saving doi of failed download for later processing")
+    paper = state.get("current_paper", {})
+    if not paper:
+        return {"current_paper": {}}
+    doi = paper.get("doi", "")
+    disease = state.get("disease_of_interest", "")
+    
+    if not doi:
+        return {}
+    
+    print(f"\n--- Tracking failed download: {doi} ---")
+    
+    csv_path = Path(__file__).parent.parent.parent / "failed_downloads.csv"
+    file_exists = csv_path.exists()
+    
+    with open(csv_path, 'a', newline='') as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow(['disease_of_interest', 'doi'])
+        writer.writerow([disease, doi])
+    
+    print(f"✓ Logged to failed_downloads.csv")
+    return {"current_paper": {}}
+
 # Routing functions
-def route_after_abstract(state: GraphState) -> Literal["download_paper", "check_abstract", "create_query"]:
+def route_after_abstract(state: GraphState) -> Literal["download_paper", "check_abstract", "create_query", END]:
     """Route based on abstract check result"""
+    queries_tried = len(state.get("tried_queries", []))
+    max_queries = state.get("max_queries", float('inf'))
+    
     if state.get("current_paper", {}).get("doi"):
         return "download_paper"
     elif state.get("papers", []):
         return "check_abstract"
+    elif queries_tried >= max_queries:
+        print(f"✓ Max queries limit reached ({max_queries})")
+        return END
     else:
         return "create_query"
 
-def route_after_download(state: GraphState) -> Literal["extract_metadata", "check_abstract", "create_query"]:
+def route_after_download(state: GraphState) -> Literal["extract_metadata", "track_failed_download"]:
     """Route based on download success"""
     if state.get("paper_md"):
         return "extract_metadata"
-    elif state.get("papers", []):
+    else:
+        return "track_failed_download"
+
+def route_after_failed_download(state: GraphState) -> Literal["check_abstract", "create_query", END]:
+    """Route after tracking failed download"""
+    queries_tried = len(state.get("tried_queries", []))
+    max_queries = state.get("max_queries", float('inf'))
+    
+    if state.get("papers", []):
         return "check_abstract"
+    elif queries_tried >= max_queries:
+        print(f"✓ Max queries limit reached ({max_queries})")
+        return END
     else:
         return "create_query"
 
-def route_after_metadata(state: GraphState) -> Literal["evaluate_robis", "check_abstract", "create_query"]:
+def route_after_metadata(state: GraphState) -> Literal["evaluate_robis", "check_abstract", "create_query", END]:
     """Route after metadata extraction"""
+    queries_tried = len(state.get("tried_queries", []))
+    max_queries = state.get("max_queries", float('inf'))
+    
     if state.get("paper_md") and state.get("current_paper", {}).get("doi"):
         return "evaluate_robis"
     elif state.get("papers", []):
         return "check_abstract"
+    elif queries_tried >= max_queries:
+        print(f"✓ Max queries limit reached ({max_queries})")
+        return END
     else:
         return "create_query"
 
-def route_after_robis(state: GraphState) -> Literal["extract_interactions", "check_abstract", "create_query"]:
+def route_after_robis(state: GraphState) -> Literal["extract_interactions", "check_abstract", "create_query", END]:
     """Route after ROBIS evaluation"""
+    queries_tried = len(state.get("tried_queries", []))
+    max_queries = state.get("max_queries", float('inf'))
+    
     if state.get("paper_md") and state.get("current_paper", {}).get("doi"):
         return "extract_interactions"
     elif state.get("papers", []):
         return "check_abstract"
+    elif queries_tried >= max_queries:
+        print(f"✓ Max queries limit reached ({max_queries})")
+        return END
     else:
         return "create_query"
 
@@ -482,14 +545,19 @@ def route_after_extraction(state: GraphState) -> Literal["check_abstract", "crea
     min_count = state.get("min_metrics", 5)
     papers_checked = len(state.get("checked_dois", []))
     max_papers = state.get("max_papers", float('inf'))
+    queries_tried = len(state.get("tried_queries", []))
+    max_queries = state.get("max_queries", float('inf'))
     
-    print(f"\n--- Risk Metrics: {count}/{min_count} | Papers Checked: {papers_checked}/{max_papers} ---")
+    print(f"\n--- Risk Metrics: {count}/{min_count} | Papers Checked: {papers_checked}/{max_papers} | Queries: {queries_tried}/{max_queries} ---")
     
     if count >= min_count:
         print("✓ Enough metrics found!")
         return END
     elif papers_checked >= max_papers:
         print(f"✓ Max papers limit reached ({max_papers})")
+        return END
+    elif queries_tried >= max_queries:
+        print(f"✓ Max queries limit reached ({max_queries})")
         return END
     elif state.get("papers", []):
         print("→ Checking next paper")
@@ -507,6 +575,7 @@ workflow.add_node("search_pubmed", search_pubmed)
 workflow.add_node("filter_papers", filter_papers)
 workflow.add_node("check_abstract", check_abstract)
 workflow.add_node("download_paper", download_paper)
+workflow.add_node("track_failed_download", track_failed_download)
 workflow.add_node("extract_metadata", extract_metadata)
 workflow.add_node("evaluate_robis", evaluate_robis)
 workflow.add_node("extract_interactions", extract_interactions)
@@ -523,7 +592,8 @@ workflow.add_conditional_edges(
     {
         "download_paper": "download_paper",
         "check_abstract": "check_abstract",
-        "create_query": "create_query"
+        "create_query": "create_query",
+        END: END
     }
 )
 
@@ -532,8 +602,17 @@ workflow.add_conditional_edges(
     route_after_download,
     {
         "extract_metadata": "extract_metadata",
+        "track_failed_download": "track_failed_download"
+    }
+)
+
+workflow.add_conditional_edges(
+    "track_failed_download",
+    route_after_failed_download,
+    {
         "check_abstract": "check_abstract",
-        "create_query": "create_query"
+        "create_query": "create_query",
+        END: END
     }
 )
 
@@ -543,7 +622,8 @@ workflow.add_conditional_edges(
     {
         "evaluate_robis": "evaluate_robis",
         "check_abstract": "check_abstract",
-        "create_query": "create_query"
+        "create_query": "create_query",
+        END: END
     }
 )
 
@@ -553,7 +633,8 @@ workflow.add_conditional_edges(
     {
         "extract_interactions": "extract_interactions",
         "check_abstract": "check_abstract",
-        "create_query": "create_query"
+        "create_query": "create_query",
+        END: END
     }
 )
 
@@ -583,6 +664,7 @@ if __name__ == "__main__":
                 "metrics_count": 0,
                 "min_metrics": 10,
                 "max_papers": 50,
+                "max_queries": 30,
                 "checked_dois": [],
                 "tried_queries": []
             },
@@ -611,6 +693,7 @@ if __name__ == "__main__":
                     "metrics_count": 0,
                     "min_metrics": 1000, # High enough to never trigger
                     "max_papers": 300,
+                    "max_queries": 30,
                     "checked_dois": [],
                     "tried_queries": []
                 },
