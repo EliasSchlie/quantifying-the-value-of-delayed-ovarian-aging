@@ -108,7 +108,7 @@ def process_manual_pdfs(folder: str, disease_of_interest: str = "cardiovascular 
 
 if __name__ == "__main__":
     folder_path = "extra_pdfs/cvd"
-    disease = "cardiovascular disease"
+    disease = "All cause mortality"
     
     total_metrics = process_manual_pdfs(folder_path, disease)
     

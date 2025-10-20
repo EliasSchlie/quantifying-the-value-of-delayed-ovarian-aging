@@ -11,7 +11,7 @@ from interaction_storage import InteractionStorage
 
 load_dotenv()
 
-llm = ChatNebius(model="moonshotai/Kimi-K2-Instruct")
+llm = ChatNebius(model="deepseek-ai/DeepSeek-R1-0528")
 pubmed_api = PubMedAPI()
 pdf_from_doi = PDFFromDOI()
 interaction_storage = InteractionStorage()
@@ -302,7 +302,7 @@ def extract_interactions(state: GraphState) -> dict:
         
         Args:
             metrics: List of risk metrics, where each metric is a dict with keys:
-                - menopause_timing_definition: How menopause groups were defined
+                - menopause_timing_definition: Specific numeric age buckets that were compared
                 - health_outcome: Specific health outcome
                 - metric_type: Type of metric (OR, HR, or RR)
                 - metric_value: The numerical value
@@ -311,15 +311,15 @@ def extract_interactions(state: GraphState) -> dict:
         Example:
             metrics = [
                 {
-                    "menopause_timing_definition": "Early < 45 years vs Normal 50-54 years",
-                    "health_outcome": "Coronary Heart Disease",
+                    "menopause_timing_definition": "40-50 vs >=51",
+                    "health_outcome": "All cause dementia",
                     "metric_type": "HR",
                     "metric_value": "1.45",
                     "ci_95": "1.20-1.75"
                 },
                 {
-                    "menopause_timing_definition": "Early < 45 years vs Normal 50-54 years",
-                    "health_outcome": "Stroke",
+                    "menopause_timing_definition": "<40 vs 50-55",
+                    "health_outcome": "Cardiovascular disease (adjusted)",
                     "metric_type": "HR",
                     "metric_value": "1.28",
                     "ci_95": "1.05-1.56"
@@ -364,23 +364,23 @@ def extract_interactions(state: GraphState) -> dict:
 Target outcome: {state['disease_of_interest']}
 
 For EACH risk metric found, extract:
-1. menopause_timing_definition: How groups were defined (e.g., "Early < 45 years vs Normal 50-54 years", "per 1-year decrease in ANM")
-2. health_outcome: Specific health outcome (e.g., "Ischemic Stroke", "Type 2 Diabetes", "Coronary Heart Disease")
+1. menopause_timing_definition: Specific numeric age buckets that were compared (e.g., "<40 vs 50-55", "40-50 vs >=51","per 1-year decrease in ANM")
+2. health_outcome: Specific health outcome (e.g., "Breast Cancer (adjusted)", "Type 2 Diabetes", "Osteoporosis & Fractures (unadjusted)")
 3. metric_type: OR, HR, or RR
 4. metric_value: The numerical value (e.g., "1.45", "2.1")
 5. ci_95: 95% confidence interval (e.g., "1.20-1.75", "1.8-2.4")
 
 CRITICAL REQUIREMENTS:
 - MUST have 95% CI reported (skip metrics without CI)
-- Submit ALL metrics at once using submit_risk_metrics with a list of all metrics
-- Extract from main results AND subgroup analyses if present
-- When done, call finish_extraction
+- Submit ALL metrics at once using the submit_risk_metrics tool.
+- Extract the main results, NOT SUBGROUP ANALYTICS.
+- When done, call the finish_extraction tool.
 
 Paper:
 {state['paper_md']}"""
     
     messages = [
-        SystemMessage(content="You are a scientific paper analyzer. Extract ALL risk metrics (OR, HR, RR) with their 95% CI. Submit all metrics in one call using submit_risk_metrics with a list. Call finish_extraction when done."),
+        SystemMessage(content="You are a scientific paper analyzer. Extract ALL risk metrics (OR, HR, RR) with their 95% CI. Submit all metrics in one call using the submit_risk_metrics tool. Call finish_extraction when done."),
         HumanMessage(content=initial_prompt)
     ]
     
