@@ -685,6 +685,7 @@ if __name__ == "__main__":
     ]
 
     if go_through_all_diseases:
+        all_results = []
         for disease in diseases:
             print(f"\n\n=== STARTING for disease: {disease} ===")
             result = agent.invoke(
@@ -697,8 +698,19 @@ if __name__ == "__main__":
                     "checked_dois": [],
                     "tried_queries": []
                 },
-                {"recursion_limit": 400}
+                {"recursion_limit": 2000}
             )
+            all_results.append({
+                "disease": disease,
+                "metrics_count": result.get('metrics_count', 0),
+                "papers_checked": len(result.get('checked_dois', []))
+            })
             print(f"\n\n=== RESULT for disease: {disease} ===")
             print(f"Total risk metrics found: {result.get('metrics_count', 0)}")
             print(f"Papers checked: {len(result.get('checked_dois', []))}")
+
+        print("\n\n=== SUMMARY OF ALL DISEASES ===")
+        for entry in all_results:
+            print(f"Disease: {entry['disease']}")
+            print(f"  Total risk metrics found: {entry['metrics_count']}")
+            print(f"  Papers checked: {entry['papers_checked']}\n")
