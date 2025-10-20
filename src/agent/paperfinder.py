@@ -1,13 +1,16 @@
 from langchain_nebius import ChatNebius
 from dotenv import load_dotenv
 from pubmed import PubMedAPI
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from typing_extensions import TypedDict, Annotated
 from typing import Literal
 from langgraph.graph import StateGraph, START, END
 from doi2pdf import PDFFromDOI
 import pymupdf4llm
 from interaction_storage import InteractionStorage
+from langchain_core.tools import tool
+from typing import List, Dict
+from pathlib import Path
 
 load_dotenv()
 
@@ -195,12 +198,9 @@ def evaluate_robis(state: GraphState) -> dict:
     print("\n--- Evaluating ROBIS score ---")
     
     # Load ROBIS prompt
-    from pathlib import Path
     robis_path = Path(__file__).parent.parent / "prompts" / "robis.md"
     with open(robis_path, 'r') as f:
         robis_prompt = f.read()
-    
-    from langchain_core.tools import tool
     
     robis_scores = {}
     
@@ -240,12 +240,10 @@ def evaluate_robis(state: GraphState) -> dict:
                     try:
                         result = submit_ROBIS_score.invoke(tool_call['args'])
                         print(f"  {result}")
-                        from langchain_core.messages import ToolMessage
                         messages.append(ToolMessage(content=result, tool_call_id=tool_call['id']))
                     except Exception as e:
                         print(f"  ✗ Failed to submit ROBIS scores: {e}")
                         error_msg = f"Error: {e}. Please resubmit."
-                        from langchain_core.messages import ToolMessage
                         messages.append(ToolMessage(content=error_msg, tool_call_id=tool_call['id']))
         else:
             messages.append(HumanMessage(content="Please complete the ROBIS evaluation and submit your scores using submit_ROBIS_score."))
@@ -292,9 +290,6 @@ def extract_interactions(state: GraphState) -> dict:
     }
     
     extraction_complete = False
-    
-    from langchain_core.tools import tool
-    from typing import List, Dict
     
     @tool
     def submit_risk_metrics(metrics: List[Dict[str, str]]) -> str:
@@ -433,7 +428,6 @@ Paper:
                         "tool_call_id": tool_call['id']
                     })
             
-            from langchain_core.messages import ToolMessage
             for tm in tool_messages:
                 messages.append(ToolMessage(content=tm["content"], tool_call_id=tm["tool_call_id"]))
         else:
