@@ -366,7 +366,7 @@ def extract_risk_metrics(state: GraphState) -> dict:
         for metric in metrics:
             try:
                 metrics2csv.add_risk_metric(
-                    "all",
+                    state['disease_of_interest'],
                     metric['menopause_timing_definition'],
                     metric['health_outcome'],
                     metric['metric_type'],
@@ -404,14 +404,7 @@ def extract_risk_metrics(state: GraphState) -> dict:
     
     metric_extraction_prompt = f"""Analyze this paper and Extract ALL, including non-significant, risk metrics from the meta-analysis (OR, HR, RR) linking menopause timing to health outcomes.
 
-Target outcomes: 
-    "All Cause Mortality",
-    "Type 2 Diabetes",
-    "Cardiovascular Disease",
-    "All Cause Dementia",
-    "Osteoporosis & Fractures",
-    "Breast Cancer",
-    "Endometrial/ Ovarian Cancer"
+Target outcome: {state['disease_of_interest']}
 
 For each risk metric, extract:
 1. menopause_timing_definition: Specific numeric age buckets that were compared (replace fuzzy wordings like "early", "natural", "late" with their numeric definitions e.g., "<40 vs 50-55", "45-50 vs >=51", "per 1-year decrease in ANM". -- If those definitions are not clear, use the fuzzy wording followed by your best guess of its numeric definition in parantheses, e.g., "early (<45) vs. late (>=51").
