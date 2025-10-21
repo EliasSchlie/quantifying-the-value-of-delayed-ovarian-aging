@@ -1,6 +1,6 @@
 # Menopause Timing & Health Outcomes Research Agent
 
-An autonomous AI system for discovering and extracting risk metrics from research papers linking menopause timing to health outcomes. Built for the "Agentic AI Against Aging" hackathon.
+An autonomous AI system for discovering and extracting risk metrics from research papers linking menopause timing to health outcomes. Built for the "[Agentic AI Against Aging](https://www.hackaging.ai/)" hackathon.
 
 ## Overview
 
@@ -48,19 +48,19 @@ cp .env.example .env
 **Process all 7 health outcomes:**
 ```bash
 cd src/agent
-python agent.py  # Set go_through_all_diseases=True in __main__
+uv run python agent.py  # Set go_through_all_diseases=True in __main__
 ```
 
 **Process a single disease (testing):**
 ```bash
 cd src/agent
-python agent.py  # Set testing=True, disease_of_interest="cardiovascular disease"
+uv run python agent.py  # Set testing=True, disease_of_interest="cardiovascular disease"
 ```
 
 **Process paywalled PDFs (from the `extra_pdfs` folder):**
 ```bash
 cd src/agent
-python paywalled_pdf_ingestor.py  # Set closed_access_pdfs=True
+uv run python paywalled_pdf_ingestor.py  # Set closed_access_pdfs=True
 ```
 
 ## Architecture
@@ -309,7 +309,7 @@ extra_pdfs/
 
 **Usage:**
 ```bash
-python paywalled_pdf_ingestor.py  # Processes all subfolders in extra_pdfs/
+uv run python paywalled_pdf_ingestor.py  # Processes all subfolders in extra_pdfs/
 ```
 
 #### `paperHTML2pdf.py`
@@ -332,7 +332,7 @@ HTML to PDF converter (fallback for HTML-only papers).
 ### Generated Files
 
 - **`menopause_risk_metrics.csv`**: Main output with all extracted risk metrics
-- **`failed_downloads.csv`**: DOIs that couldn't be downloaded (for manual processing)
+- **`failed_downloads.csv`**: Closed-access DOIs that must be manually downloaded for processing
 - **`pdfs/`**: Downloaded PDF files (named by DOI)
 
 ### Data Quality
@@ -353,7 +353,7 @@ Create a `.env` file:
 # Required
 NEBIUS_API_KEY=your_nebius_api_key
 
-# Optional (for paywalled PDFs)
+# For more reliable PDF downloads
 BRIGHT_WEB_UNLOCKER_KEY=your_brightdata_key
 ```
 
@@ -390,7 +390,7 @@ ovarian_aging/
 │   ├── cardiovascular_disease/
 │   └── ...
 ├── menopause_risk_metrics.csv          # Main output
-├── failed_downloads.csv                # Failed DOIs
+├── failed_downloads.csv                # Closed-access DOIs that must be manually downloaded
 ├── pyproject.toml                      # Dependencies
 └── README.md
 ```
@@ -416,30 +416,14 @@ Edit `src/prompts/robis.md` to adjust quality criteria.
 
 Extend `doi2pdf.py` `_download_pdf_direct()` or add new methods.
 
-## Limitations & Future Work
-
-**Current Limitations:**
-- Only processes open-access papers (unless using Bright Data)
-- Requires 95% CI for metrics (skips metrics without CI)
-- English-language papers only
-- Meta-analyses and systematic reviews only
-
-**Future Enhancements:**
-- [ ] Support for individual cohort studies
-- [ ] Multi-language support
-- [ ] Automatic PRISMA diagram generation
-- [ ] Integration with more PDF sources
-- [ ] Real-time monitoring dashboard
-
 ## License
 
 This project was created for the "Agentic AI Against Aging" hackathon.
 
 ## Acknowledgments
 
-- Langgraph for agent workflow
+- LangGraph for agent workflow orchestration
 - PubMed E-utilities API
 - Unpaywall API for open-access PDFs
 - Docling & pymupdf4llm for PDF extraction
-- LangGraph for workflow orchestration
 - Nebius for LLM API
