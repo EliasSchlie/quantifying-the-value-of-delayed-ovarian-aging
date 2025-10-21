@@ -36,7 +36,7 @@ class GraphState(TypedDict):
     current_paper: dict
     paper_md: str
     metrics_count: int
-    min_metrics: int
+    max_metrics: int
     max_papers: int
     max_queries: int
     robis_categorical_risk: str
@@ -337,7 +337,7 @@ def extract_risk_metrics(state: GraphState) -> dict:
         for metric in metrics:
             try:
                 metrics2csv.add_risk_metric(
-                    state['disease_of_interest'],
+                    "all",
                     metric['menopause_timing_definition'],
                     metric['health_outcome'],
                     metric['metric_type'],
@@ -375,7 +375,14 @@ def extract_risk_metrics(state: GraphState) -> dict:
     
     metric_extraction_prompt = f"""Analyze this paper and Extract ALL, including non-significant, risk metrics from the meta-analysis (OR, HR, RR) linking menopause timing to health outcomes.
 
-Target outcome: {state['disease_of_interest']}
+Target outcomes: 
+    "All Cause Mortality",
+    "Type 2 Diabetes",
+    "Cardiovascular Disease",
+    "All Cause Dementia",
+    "Osteoporosis & Fractures",
+    "Breast Cancer",
+    "Endometrial/ Ovarian Cancer"
 
 For each risk metric, extract:
 1. menopause_timing_definition: Specific numeric age buckets that were compared (replace fuzzy wordings like "early", "natural", "late" with their numeric definitions e.g., "<40 vs 50-55", "45-50 vs >=51", "per 1-year decrease in ANM". -- If those definitions are not clear, use the fuzzy wording followed by your best guess of its numeric definition in parantheses, e.g., "early (<45) vs. late (>=51").
@@ -553,15 +560,15 @@ def route_after_robis(state: GraphState) -> Literal["extract_risk_metrics", "che
 def route_after_extraction(state: GraphState) -> Literal["check_abstract", "create_query", END]:
     """Route based on metrics count or max papers checked"""
     count = state.get("metrics_count", 0)
-    min_count = state.get("min_metrics", 5)
+    max_metrics = state.get("max_metrics", 5)
     papers_checked = len(state.get("checked_dois", []))
     max_papers = state.get("max_papers", float('inf'))
     queries_tried = len(state.get("tried_queries", []))
     max_queries = state.get("max_queries", float('inf'))
     
-    print(f"\n--- Risk Metrics: {count}/{min_count} | Papers Checked: {papers_checked}/{max_papers} | Queries: {queries_tried}/{max_queries} ---")
+    print(f"\n--- Risk Metrics: {count}/{max_metrics} | Papers Checked: {papers_checked}/{max_papers} | Queries: {queries_tried}/{max_queries} ---")
     
-    if count >= min_count:
+    if count >= max_metrics:
         print("✓ Enough metrics found!")
         return END
     elif papers_checked >= max_papers:
@@ -664,8 +671,8 @@ agent = workflow.compile()
 agent = agent.with_config(recursion_limit=400)
 
 if __name__ == "__main__":
-    testing = False
-    go_through_all_diseases = True
+    testing = True
+    go_through_all_diseases = False
 
 
     if testing:
@@ -673,7 +680,7 @@ if __name__ == "__main__":
             {
                 "disease_of_interest": "cardiovascular disease",
                 "metrics_count": 0,
-                "min_metrics": 10,
+                "max_metrics": 10,
                 "max_papers": 50,
                 "max_queries": 30,
                 "checked_dois": [],
@@ -684,18 +691,17 @@ if __name__ == "__main__":
         print(f"\n\n=== FINAL RESULT ===")
         print(f"Total risk metrics found: {result.get('metrics_count', 0)}")
         print(f"Papers checked: {len(result.get('checked_dois', []))}")
-    
-    diseases = [
-        "All Cause Mortality",
-        "Type 2 Diabetes",
-        "Cardiovascular Disease",
-        "All Cause Dementia",
-        "Osteoporosis & Fractures",
-        "Breast Cancer",
-        "Endometrial/ Ovarian Cancer"
-    ]
 
     if go_through_all_diseases:
+        diseases = [
+            "All Cause Mortality",
+            "Type 2 Diabetes",
+            "Cardiovascular Disease",
+            "All Cause Dementia",
+            "Osteoporosis & Fractures",
+            "Breast Cancer",
+            "Endometrial/ Ovarian Cancer"
+        ]
         all_results = []
         for disease in diseases:
             print(f"\n\n=== STARTING for disease: {disease} ===")
@@ -703,7 +709,7 @@ if __name__ == "__main__":
                 {
                     "disease_of_interest": disease,
                     "metrics_count": 0,
-                    "min_metrics": 1000, # High enough to never trigger
+                    "max_metrics": 1000, # High enough to never trigger
                     "max_papers": 300,
                     "max_queries": 30,
                     "checked_dois": [],

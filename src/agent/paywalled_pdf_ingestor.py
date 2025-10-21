@@ -21,20 +21,6 @@ pubmed_api = PubMedAPI()
 llm = ChatNebius(model="Qwen/Qwen3-235B-A22B-Instruct-2507")
 
 
-def extract_doi_from_markdown(md: str) -> str:
-    """Extract first DOI from markdown (usually the paper's own DOI)"""
-    patterns = [
-        r'doi\.org/(10\.[^\s\)\]]+)',
-        r'DOI:\s*(10\.[^\s\)\]]+)',
-        r'doi:\s*(10\.[^\s\)\]]+)'
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, md, re.IGNORECASE)
-        if match:
-            return match.group(1).rstrip('.,;')
-    return ""
-
-
 @tool
 def search_pubmed(query: str) -> str:
     """
@@ -190,27 +176,11 @@ def process_paywalled_pdfs(folder: str, disease_of_interest: str = "cardiovascul
             print(f"✗ Failed to extract markdown: {e}")
             continue
         
-        doi = extract_doi_from_markdown(md)
-
-        if doi:
-            print(f"✓ Found DOI: {doi}")
-            try:
-                papers = pubmed_api.search(doi, max_results=1)
-                if not papers:
-                    print("✗ No PubMed results for DOI")
-                    continue
-                paper = papers[0]
-                print(f"✓ Retrieved metadata: {paper.get('title', 'No title')[:50]}...")
-            except Exception as e:
-                print(f"✗ Failed to fetch PubMed data: {e}")
-                continue
-        else:
-            print("⚠ No DOI found - using agent to search by title/authors")
-            paper = find_paper_metadata_via_agent(md)
-            if not paper:
-                print("✗ Agent could not find paper in PubMed")
-                continue
-            print(f"✓ Agent found paper: {paper.get('title', 'No title')[:50]}...")
+        paper = find_paper_metadata_via_agent(md)
+        if not paper:
+            print("✗ Agent could not find paper in PubMed")
+            continue
+        print(f"✓ Agent found paper: {paper.get('title', 'No title')[:50]}...")
         
         state = {
             "disease_of_interest": disease_of_interest,
@@ -241,10 +211,42 @@ def process_paywalled_pdfs(folder: str, disease_of_interest: str = "cardiovascul
 
 
 if __name__ == "__main__":
-    folder_path = "test_pdfs/cvd"
-    disease = "All cause mortality"
+
+    testing = False
+    closed_access_pdfs = True
+    re_run_open_access_pdfs = False
     
-    total_metrics = process_paywalled_pdfs(folder_path, disease)
+    if testing:
+        folder_path = "test_pdfs/cvd"
+        disease = "cardiovascular disease"
+        total_metrics = process_paywalled_pdfs(folder_path, disease)
+    
+    elif closed_access_pdfs:
+        # Process each subfolder in extra_pdfs with its own disease name
+        extra_pdfs_path = Path("extra_pdfs")
+        total_metrics = 0
+        
+        if extra_pdfs_path.exists():
+            subfolders = [f for f in extra_pdfs_path.iterdir() if f.is_dir()]
+            
+            for subfolder in sorted(subfolders):
+                # Convert folder name to disease name (e.g., "all_cause_dementia" -> "All Cause Dementia")
+                disease = subfolder.name.replace("_", " ").title()
+                
+                print(f"\n{'='*60}")
+                print(f"Processing disease category: {disease}")
+                print(f"{'='*60}")
+                
+                metrics = process_paywalled_pdfs(str(subfolder), disease)
+                print(f"Metrics extracted for {disease}: {metrics}")
+                total_metrics += metrics
+        else:
+            print(f"✗ Folder not found: extra_pdfs")
+    
+    elif re_run_open_access_pdfs:
+        folder_path = "pdfs"
+        disease = "All cause mortality, Type 2 Diabetes, Cardiovascular Disease, All Cause Dementia, Osteoporosis & Fractures, Breast Cancer, Endometrial/ Ovarian Cancer"
+        total_metrics = process_paywalled_pdfs(folder_path, disease)
     
     print(f"\n\n=== FINAL RESULT ===")
     print(f"Total risk metrics extracted: {total_metrics}")
