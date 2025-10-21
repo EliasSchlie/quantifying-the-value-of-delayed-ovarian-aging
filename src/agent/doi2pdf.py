@@ -6,10 +6,9 @@ import urllib.parse
 import sys
 from typing import Optional
 from dotenv import load_dotenv
-load_dotenv()
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from paperHTML2pdf import html_to_pdf
+
+load_dotenv()
 
 
 class PDFFromDOI:

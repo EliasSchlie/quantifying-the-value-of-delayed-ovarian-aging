@@ -22,11 +22,11 @@ source .venv/bin/activate
 ### Running the Pipeline
 ```bash
 # Run the main agent (processes all diseases)
-cd src/agent && python paperfinder.py
+cd src/agent && python agent.py
 
 # Test with single disease
-# Edit paperfinder.py line 656-657: set testing=True and go_through_all_diseases=False
-cd src/agent && python paperfinder.py
+# Edit agent.py line 656-657: set testing=True and go_through_all_diseases=False
+cd src/agent && python agent.py
 
 # Process manually downloaded PDFs
 cd src/agent && python -c "from manual_pdf_processor import process_manual_pdfs; process_manual_pdfs('extra_pdfs/cvd', 'cardiovascular disease')"
@@ -52,7 +52,7 @@ mlflow ui
 
 ## Architecture
 
-### LangGraph Workflow (`src/agent/paperfinder.py`)
+### LangGraph Workflow (`src/agent/agent.py`)
 
 The core is a stateful LangGraph agent that orchestrates the entire pipeline:
 
@@ -101,7 +101,7 @@ The core is a stateful LangGraph agent that orchestrates the entire pipeline:
 - Falls back to HTML→PDF conversion (`paperHTML2pdf.py`) if needed
 - Auto-detects format (validates `%PDF-` header)
 
-**`interaction_storage.py`**:
+**`metrics2csv.py`**:
 - CSV writer for risk metrics (`menopause_risk_metrics.csv`)
 - Fields: disease, menopause_timing_definition, health_outcome, metric_type, metric_value, ci_95, reference, date_published, n_of_included_studies, sample_size, geography, confounder_vars, authors, robis_categorical_risk, robis_quality_score
 
@@ -152,36 +152,36 @@ API keys required in `.env`:
 ## Important Patterns
 
 ### Recursion Limit
-The LangGraph agent uses `recursion_limit=400` to handle long paper-processing chains. If you see recursion errors, this may need adjustment at `paperfinder.py:653` (in compile step) and `paperfinder.py:671,699` (in invoke calls).
+The LangGraph agent uses `recursion_limit=400` to handle long paper-processing chains. If you see recursion errors, this may need adjustment at `agent.py:653` (in compile step) and `agent.py:671,699` (in invoke calls).
 
 ### Query Diversification
-The `create_query` node varies terminology when `tried_queries` has entries. Add variations to the prompt at `paperfinder.py:56-62` if searches become too narrow.
+The `create_query` node varies terminology when `tried_queries` has entries. Add variations to the prompt at `agent.py:56-62` if searches become too narrow.
 
 ### Metadata Extraction
-The `extract_metadata` function uses structured output parsing (key: value format). If extraction fails, check the prompt format at `paperfinder.py:149-166`.
+The `extract_metadata` function uses structured output parsing (key: value format). If extraction fails, check the prompt format at `agent.py:149-166`.
 
 ### ROBIS Evaluation
 The ROBIS assessment follows the framework in `src/prompts/robis.md`. Modify this file to adjust bias evaluation criteria (domains 1-4, phase 1-2 signaling questions).
 
 ### Tool Call Iteration
-Both `evaluate_robis` and `extract_interactions` use agentic loops (max 10/20 iterations) to retry tool calls. If LLMs fail to call tools, check that `llm.bind_tools([...])` includes the correct tool definitions at `paperfinder.py:228` (ROBIS) and `paperfinder.py:363` (metrics extraction).
+Both `evaluate_robis` and `extract_interactions` use agentic loops (max 10/20 iterations) to retry tool calls. If LLMs fail to call tools, check that `llm.bind_tools([...])` includes the correct tool definitions at `agent.py:228` (ROBIS) and `agent.py:363` (metrics extraction).
 
 ## Configuration Notes
 
 ### Workflow Parameters
-Default parameters in `paperfinder.py:662-699`:
+Default parameters in `agent.py:662-699`:
 - **Testing mode**: `min_metrics=10`, `max_papers=50`, `max_queries=30`
 - **Production mode**: `min_metrics=1000` (effectively unlimited), `max_papers=300`, `max_queries=30`
 - These control when the agent stops processing for each disease
-- **Diseases list** at `paperfinder.py:677-685`: Hardcoded list of 7 target diseases/outcomes
+- **Diseases list** at `agent.py:677-685`: Hardcoded list of 7 target diseases/outcomes
 
 ### API and Processing Limits
 - PubMed searches default to `max_results=500` with `meta_analysis_only=True` filter
 - PDF downloads timeout after 60s (Bright Data) or 30s (direct)
 - Markdown conversion via `pymupdf4llm.to_markdown()` rejects papers <7000 chars (too short)
 - CSV uses `csv.QUOTE_ALL` to handle commas/newlines in metadata fields
-- ROBIS evaluation: max 10 iterations (`paperfinder.py:235`)
-- Metric extraction: max 20 iterations (`paperfinder.py:391`)
+- ROBIS evaluation: max 10 iterations (`agent.py:235`)
+- Metric extraction: max 20 iterations (`agent.py:391`)
 
 ## Common Issues
 
@@ -191,4 +191,4 @@ Default parameters in `paperfinder.py:662-699`:
 
 **MLflow connection errors**: Ensure `mlruns/` directory exists and is writable. MLflow automatically tracks LangGraph executions.
 
-**Metric extraction misses results**: Check that papers report 95% CIs (required by prompt). Subgroup analyses are intentionally skipped per `paperfinder.py:379`.
+**Metric extraction misses results**: Check that papers report 95% CIs (required by prompt). Subgroup analyses are intentionally skipped per `agent.py:379`.

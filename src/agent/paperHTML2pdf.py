@@ -1,6 +1,5 @@
 from markdownify import markdownify as md
 from markdown_pdf import MarkdownPdf, Section
-import os
 import re
 from bs4 import BeautifulSoup
 
@@ -34,4 +33,3 @@ if __name__ == "__main__":
         print(result)
     else:
         print("Usage: python paperHTML2pdf.py <html_file_path>")
-

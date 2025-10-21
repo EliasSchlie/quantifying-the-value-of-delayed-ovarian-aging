@@ -1,18 +1,17 @@
 from langchain_nebius import ChatNebius
 from dotenv import load_dotenv
-from pubmed import PubMedAPI
+from pubmedAPI import PubMedAPI
 from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from typing_extensions import TypedDict, Annotated
 from typing import Literal
 from langgraph.graph import StateGraph, START, END
 from doi2pdf import PDFFromDOI
 import pymupdf4llm
-from interaction_storage import InteractionStorage
+from metrics2csv import InteractionStorage
 from langchain_core.tools import tool
 from typing import List, Dict
 from pathlib import Path
 import csv
-import os
 
 load_dotenv()
 
@@ -20,7 +19,7 @@ llm = ChatNebius(model="Qwen/Qwen3-235B-A22B-Instruct-2507")
 reasoning_llm = ChatNebius(model="deepseek-ai/DeepSeek-R1-0528")
 pubmed_api = PubMedAPI()
 pdf_from_doi = PDFFromDOI()
-interaction_storage = InteractionStorage()
+metrics2csv = InteractionStorage()
 
 # State definition
 class GraphState(TypedDict):
@@ -128,7 +127,7 @@ def download_paper(state: GraphState) -> dict:
         path = pdf_from_doi.download(doi)
         md = pymupdf4llm.to_markdown(str(path))
         print(f"Successfully converted to markdown ({len(md)} chars)")
-        if md and len(md) > 7000:
+        if md and len(md) > 10000:
             return {"paper_md": md}
         else:
             print(f"Markdown too short ({len(md)} chars). Skipping.")
@@ -274,7 +273,7 @@ def evaluate_robis(state: GraphState) -> dict:
         "robis_quality_score": robis_scores['quality_score']
     }
 
-def extract_interactions(state: GraphState) -> dict:
+def extract_risk_metrics(state: GraphState) -> dict:
     """AI extracts risk metrics from paper using tool calls, looping until done"""
     if not state["paper_md"]:
         return {"metrics_count": state.get("metrics_count", 0), "current_paper": {}, "paper_md": ""}
@@ -333,7 +332,7 @@ def extract_interactions(state: GraphState) -> dict:
         output = ""
         for metric in metrics:
             try:
-                interaction_storage.add_risk_metric(
+                metrics2csv.add_risk_metric(
                     state['disease_of_interest'],
                     metric['menopause_timing_definition'],
                     metric['health_outcome'],
@@ -524,13 +523,13 @@ def route_after_metadata(state: GraphState) -> Literal["evaluate_robis", "check_
     else:
         return "create_query"
 
-def route_after_robis(state: GraphState) -> Literal["extract_interactions", "check_abstract", "create_query", END]:
+def route_after_robis(state: GraphState) -> Literal["extract_risk_metrics", "check_abstract", "create_query", END]:
     """Route after ROBIS evaluation"""
     queries_tried = len(state.get("tried_queries", []))
     max_queries = state.get("max_queries", float('inf'))
     
     if state.get("paper_md") and state.get("current_paper", {}).get("doi"):
-        return "extract_interactions"
+        return "extract_risk_metrics"
     elif state.get("papers", []):
         return "check_abstract"
     elif queries_tried >= max_queries:
@@ -578,7 +577,7 @@ workflow.add_node("download_paper", download_paper)
 workflow.add_node("track_failed_download", track_failed_download)
 workflow.add_node("extract_metadata", extract_metadata)
 workflow.add_node("evaluate_robis", evaluate_robis)
-workflow.add_node("extract_interactions", extract_interactions)
+workflow.add_node("extract_risk_metrics", extract_risk_metrics)
 
 # Add edges
 workflow.add_edge(START, "create_query")
@@ -631,7 +630,7 @@ workflow.add_conditional_edges(
     "evaluate_robis",
     route_after_robis,
     {
-        "extract_interactions": "extract_interactions",
+        "extract_risk_metrics": "extract_risk_metrics",
         "check_abstract": "check_abstract",
         "create_query": "create_query",
         END: END
@@ -639,7 +638,7 @@ workflow.add_conditional_edges(
 )
 
 workflow.add_conditional_edges(
-    "extract_interactions",
+    "extract_risk_metrics",
     route_after_extraction,
     {
         "check_abstract": "check_abstract",
