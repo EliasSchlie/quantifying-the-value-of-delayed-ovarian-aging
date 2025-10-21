@@ -47,6 +47,8 @@ load_dotenv()
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
+META_ANALYSIS_ONLY = True # Set to False to include individual cohort studies in the search results
+
 llm = ChatNebius(model="Qwen/Qwen3-235B-A22B-Instruct-2507")
 reasoning_llm = ChatNebius(model="deepseek-ai/DeepSeek-R1-0528")
 pubmed_api = PubMedAPI()
@@ -73,7 +75,7 @@ class GraphState(TypedDict):
 def create_query(state: GraphState) -> dict:
     """AI creates PubMed query for menopause timing and health outcomes"""
     print(f"\n--- Creating query for: {state['disease_of_interest']} ---")
-    # return {"query": "10.1016/S2468-2667(19)30155-0"}
+    # return {"query": "10.1016/S2468-2667(19)30155-0"} # Uncomment this for testing with a single specific paper
     tried = state.get("tried_queries", [])
     
     if tried:
@@ -110,7 +112,7 @@ Focus on meta-analyses with risk metrics (OR, HR, RR). Include relevant keywords
 def search_pubmed(state: GraphState) -> dict:
     """Search PubMed API"""
     print(f"\n--- Searching PubMed: {state['query']} ---")
-    papers = pubmed_api.search(state['query'], max_results=500, meta_analysis_only=True)
+    papers = pubmed_api.search(state['query'], max_results=500, meta_analysis_only=META_ANALYSIS_ONLY)
     print(f"Found {len(papers)} papers")
     return {"papers": papers}
 
