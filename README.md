@@ -57,10 +57,11 @@ cd src/agent
 uv run python agent.py  # Set testing=True, disease_of_interest="cardiovascular disease"
 ```
 
-**Process paywalled PDFs (from the `extra_pdfs` folder):**
+**Process paywalled PDFs (manually obtained papers that can't legally be downloaded programmatically):**
 ```bash
 cd src/agent
 uv run python paywalled_pdf_ingestor.py  # Set closed_access_pdfs=True
+# Note: Place manually downloaded PDFs in extra_pdfs/<disease_name>/ folders first
 ```
 
 ## Architecture
@@ -71,20 +72,21 @@ The following is the diagram of the main agent ([`src/agent/agent.py`](src/agent
 
 
 ```mermaid
+
 flowchart TD
     START([START]) --> CQ[create_query]:::ai
-    CQ --> SP[search_pubmed]:::tool
-    SP --> FP[filter_papers]
+    CQ --> SP[search_pubmed]:::deterministic
+    SP --> FP[filter_papers]:::deterministic
     FP --> CA[check_abstract]:::ai
     
     CA --> R1{route_after_abstract}
-    R1 -->|Relevant paper found| DP[download_paper]:::tool
+    R1 -->|Relevant paper found| DP[download_paper]:::deterministic
     R1 -->|Not relevant, more papers| CA
     R1 -->|No papers left| CQ
     
     DP --> R2{route_after_download}
     R2 -->|PDF→MD success| EM[extract_metadata]:::ai
-    R2 -->|Failed, track & continue| TFD[track_failed_download]
+    R2 -->|Failed, track & continue| TFD[track_failed_download]:::deterministic
     
     TFD --> R4{route_after_failed}
     R4 -->|More papers| CA
@@ -100,7 +102,7 @@ flowchart TD
     
     %% Styling
     classDef ai fill:#e1f5e1,stroke:#4caf50,stroke-width:2px
-    classDef tool fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    classDef deterministic fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
     classDef success fill:#c8e6c9,stroke:#4caf50,stroke-width:3px
 ```
 
@@ -259,18 +261,21 @@ storage.add_risk_metric(
 ### Supporting Modules
 
 #### `paywalled_pdf_ingestor.py`
-Batch processor for manually downloaded PDFs (typically paywalled).
+Batch processor for paywalled PDFs that cannot be legally downloaded programmatically.
+
+**Why This Exists:**
+Many high-quality meta-analyses are published in journals behind institutional paywalls. While these papers may be accessible to researchers with institutional subscriptions, they cannot be legally downloaded via automated scripts. This module enables processing of such papers once they've been manually obtained through legitimate access channels.
 
 **Features:**
 - Processes PDFs from `extra_pdfs/<disease>/` folders
-- Uses AI agent to match PDFs to PubMed metadata
-- Reuses the same extraction pipeline as main agent
+- Uses AI agent to match PDFs to PubMed metadata (since we only have the PDF, not the DOI)
+- Reuses the same extraction pipeline as main agent (ROBIS evaluation, metadata extraction, risk metrics)
 
 **PubMed Matching Agent:**
 1. Analyzes PDF to identify title/authors
 2. Crafts search queries
 3. Compares results to confirm match
-4. Retrieves complete metadata
+4. Retrieves complete metadata (DOI, dates, etc.)
 
 **Folder Structure:**
 ```
@@ -307,8 +312,9 @@ HTML to PDF converter (fallback for HTML-only papers).
 ### Generated Files
 
 - **`menopause_risk_metrics.csv`**: Main output with all extracted risk metrics
-- **`failed_downloads.csv`**: Closed-access DOIs that must be manually downloaded for processing
-- **`pdfs/`**: Downloaded PDF files (named by DOI)
+- **`failed_downloads.csv`**: Paywalled/closed-access papers that couldn't be programmatically downloaded and require manual access through institutional subscriptions
+- **`pdfs/`**: Successfully downloaded open-access PDF files (named by DOI)
+- **`extra_pdfs/`**: Manually obtained paywalled PDFs, organized by disease category
 
 ### Data Quality
 
