@@ -54,7 +54,6 @@ class PDFFromDOI:
         pdf_url = best.get("url_for_pdf")
         if not pdf_url:
             raise FileNotFoundError(f"No open-access PDF URL in Unpaywall response for DOI: {doi}")
-        print(pdf_url)
         return pdf_url
 
     def _download_pdf_via_brightdata(self, pdf_url: str, out_path: str) -> bool:
@@ -173,7 +172,7 @@ class PDFFromDOI:
         pdf_links = self._extract_pdf_links(html_content, base_url)
         
         if pdf_links:
-            print(f"Found {len(pdf_links)} potential PDF link(s), trying...")
+            print(f"Trying {len(pdf_links)} PDF link(s)...")
         
         # Try each extracted PDF link
         for i, pdf_link in enumerate(pdf_links[:5], 1):
@@ -182,13 +181,13 @@ class PDFFromDOI:
                 if os.path.exists(path) and os.path.getsize(path) > 100:
                     with open(path, "rb") as f:
                         if f.read(5) == b"%PDF-":
-                            print(f"  ✓ Successfully downloaded PDF")
+                            print(f"✓ PDF downloaded from link {i}")
                             return path
                 if os.path.exists(path):
                     os.remove(path)
         
         # Fallback: convert HTML to PDF via Markdown
-        print(f"No valid PDF links found, converting HTML to PDF via Markdown...")
+        print(f"Converting HTML to PDF...")
         pdf_path = html_to_pdf(html_path)
         return pdf_path
     

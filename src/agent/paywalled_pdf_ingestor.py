@@ -1,15 +1,24 @@
 from dotenv import load_dotenv
 from pubmedAPI import PubMedAPI
 from agent import extract_metadata, evaluate_robis, extract_risk_metrics
-import pymupdf4llm
+from pdf2md import pdf_to_markdown
+from langchain_nebius import ChatNebius
+from langchain_core.tools import tool
+from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 import os
 import re
+import logging
 from pathlib import Path
 from langsmith import traceable
 
 load_dotenv()
 
+# Suppress HTTP request logging
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 pubmed_api = PubMedAPI()
+llm = ChatNebius(model="Qwen/Qwen3-235B-A22B-Instruct-2507")
 
 
 def extract_doi_from_markdown(md: str) -> str:
@@ -26,9 +35,129 @@ def extract_doi_from_markdown(md: str) -> str:
     return ""
 
 
-@traceable(name="process_manual_pdfs")
-def process_manual_pdfs(folder: str, disease_of_interest: str = "cardiovascular disease") -> int:
-    """Process manually added PDFs from a folder
+@tool
+def search_pubmed(query: str) -> str:
+    """
+    Search PubMed with a freeform query and return the top result.
+
+    Args:
+        query: Any PubMed search query (title, authors, DOI, keywords, etc.)
+
+    Returns:
+        JSON string with a single paper metadata dict, or empty dict if no results
+    """
+    import json
+    try:
+        papers = pubmed_api.search(query, max_results=1)
+        return json.dumps(papers[0] if papers else {})
+    except:
+        return json.dumps({})
+
+
+# Global variable to store last search result
+_last_search_result = None
+
+
+@tool
+def confirm_paper_metadata() -> str:
+    """
+    Confirm that the last search result is the correct paper.
+    
+    Returns:
+        Confirmation message
+    """
+    global _last_search_result
+    
+    if _last_search_result:
+        return "Paper confirmed as correct match."
+    else:
+        return "No search result to confirm."
+
+
+@traceable(name="find_paper_metadata_agent")
+def find_paper_metadata_via_agent(markdown: str) -> dict:
+    """
+    Use an LLM agent to search PubMed and find paper metadata.
+
+    Args:
+        markdown: The full paper markdown text
+
+    Returns:
+        Paper metadata dict if found and confirmed, empty dict otherwise
+    """
+    global _last_search_result
+    _last_search_result = None
+
+    system_prompt = """You are a research paper metadata extraction agent. Your task is to:
+1. Analyze the paper markdown to understand its title, authors, and content
+2. Craft PubMed search queries to find the paper's metadata
+3. Review each search result and either confirm it or try a different query
+
+Process:
+- Call search_pubmed with a freeform query (e.g., title, author names, DOI, keywords)
+- You'll get back ONE paper result (or empty dict if no match)
+- Review if it matches the paper in the markdown (compare title, authors)
+- If it matches: call confirm_paper_metadata() to confirm
+- If it doesn't match: try a different search query
+- Continue until you find the right paper or exhaust reasonable search attempts
+
+Tips:
+- Start with the most specific query (e.g., full title in quotes)
+- If no match, try variations (partial title, first author + keywords)
+- Compare titles allowing for minor formatting differences
+- Check if authors match"""
+
+    user_prompt = f"""Find this paper's metadata in PubMed by crafting search queries.
+
+Paper markdown (first 3000 chars):
+{markdown[:3000]}"""
+
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_prompt)
+    ]
+
+    tools = [search_pubmed, confirm_paper_metadata]
+    llm_with_tools = llm.bind_tools(tools)
+
+    # Run agent loop (max 10 iterations)
+    for _ in range(10):
+        response = llm_with_tools.invoke(messages)
+        messages.append(response)
+
+        # Check if agent is done
+        if not response.tool_calls:
+            return {}
+
+        # Execute tool calls
+        for tool_call in response.tool_calls:
+            tool_name = tool_call["name"]
+            tool_args = tool_call["args"]
+
+            if tool_name == "search_pubmed":
+                result = search_pubmed.invoke(tool_args)
+                import json
+                _last_search_result = json.loads(result) if result != "{}" else None
+                messages.append(ToolMessage(
+                    content=result,
+                    tool_call_id=tool_call["id"]
+                ))
+            elif tool_name == "confirm_paper_metadata":
+                result = confirm_paper_metadata.invoke(tool_args)
+                messages.append(ToolMessage(
+                    content=result,
+                    tool_call_id=tool_call["id"]
+                ))
+                # Return the confirmed paper
+                if _last_search_result:
+                    return _last_search_result
+
+    return {}
+
+
+@traceable(name="process_paywalled_pdfs")
+def process_paywalled_pdfs(folder: str, disease_of_interest: str = "cardiovascular disease") -> int:
+    """Process paywalled PDFs from a folder
     
     Args:
         folder: Path to folder containing PDFs to process
@@ -46,7 +175,7 @@ def process_manual_pdfs(folder: str, disease_of_interest: str = "cardiovascular 
         print(f"\n--- No PDFs found in {folder} ---")
         return 0
     
-    print(f"\n=== PROCESSING MANUAL PDFs FROM {folder} ===")
+    print(f"\n=== PROCESSING PAYWALLED PDFs FROM {folder} ===")
     print(f"Found {len(pdf_files)} PDF(s)")
     
     metrics_count = 0
@@ -55,28 +184,33 @@ def process_manual_pdfs(folder: str, disease_of_interest: str = "cardiovascular 
         print(f"\n--- Processing: {pdf_path.name} ---")
         
         try:
-            md = pymupdf4llm.to_markdown(str(pdf_path))
+            md = pdf_to_markdown(pdf_path)
             print(f"✓ Extracted markdown ({len(md)} chars)")
         except Exception as e:
             print(f"✗ Failed to extract markdown: {e}")
             continue
         
         doi = extract_doi_from_markdown(md)
-        if not doi:
-            print("✗ No DOI found in markdown")
-            continue
-        print(f"✓ Found DOI: {doi}")
-        
-        try:
-            papers = pubmed_api.search(doi, max_results=1)
-            if not papers:
-                print("✗ No PubMed results for DOI")
+
+        if doi:
+            print(f"✓ Found DOI: {doi}")
+            try:
+                papers = pubmed_api.search(doi, max_results=1)
+                if not papers:
+                    print("✗ No PubMed results for DOI")
+                    continue
+                paper = papers[0]
+                print(f"✓ Retrieved metadata: {paper.get('title', 'No title')[:50]}...")
+            except Exception as e:
+                print(f"✗ Failed to fetch PubMed data: {e}")
                 continue
-            paper = papers[0]
-            print(f"✓ Retrieved metadata: {paper.get('title', 'No title')[:50]}...")
-        except Exception as e:
-            print(f"✗ Failed to fetch PubMed data: {e}")
-            continue
+        else:
+            print("⚠ No DOI found - using agent to search by title/authors")
+            paper = find_paper_metadata_via_agent(md)
+            if not paper:
+                print("✗ Agent could not find paper in PubMed")
+                continue
+            print(f"✓ Agent found paper: {paper.get('title', 'No title')[:50]}...")
         
         state = {
             "disease_of_interest": disease_of_interest,
@@ -101,7 +235,7 @@ def process_manual_pdfs(folder: str, disease_of_interest: str = "cardiovascular 
         metrics_count = result["metrics_count"]
         print(f"✓ Paper processed. Total metrics: {metrics_count}")
     
-    print(f"\n=== MANUAL PDF PROCESSING COMPLETE ===")
+    print(f"\n=== PAYWALLED PDF PROCESSING COMPLETE ===")
     print(f"Total metrics extracted: {metrics_count}")
     return metrics_count
 
@@ -110,7 +244,7 @@ if __name__ == "__main__":
     folder_path = "test_pdfs/cvd"
     disease = "All cause mortality"
     
-    total_metrics = process_manual_pdfs(folder_path, disease)
+    total_metrics = process_paywalled_pdfs(folder_path, disease)
     
     print(f"\n\n=== FINAL RESULT ===")
     print(f"Total risk metrics extracted: {total_metrics}")

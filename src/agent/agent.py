@@ -6,14 +6,19 @@ from typing_extensions import TypedDict, Annotated
 from typing import Literal
 from langgraph.graph import StateGraph, START, END
 from doi2pdf import PDFFromDOI
-import pymupdf4llm
+from pdf2md import pdf_to_markdown
 from metrics2csv import InteractionStorage
 from langchain_core.tools import tool
 from typing import List, Dict
 from pathlib import Path
 import csv
+import logging
 
 load_dotenv()
+
+# Suppress HTTP request logging
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 llm = ChatNebius(model="Qwen/Qwen3-235B-A22B-Instruct-2507")
 reasoning_llm = ChatNebius(model="deepseek-ai/DeepSeek-R1-0528")
@@ -117,17 +122,17 @@ def download_paper(state: GraphState) -> dict:
     """Download paper PDF and convert to markdown"""
     paper = state["current_paper"]
     doi = paper.get("doi")
-    
+
     if not doi:
         return {"paper_md": ""}
-    
+
     print(f"\n--- Downloading DOI: {doi} ---")
-    
+
     try:
         path = pdf_from_doi.download(doi)
-        md = pymupdf4llm.to_markdown(str(path))
+        md = pdf_to_markdown(path)
         print(f"Successfully converted to markdown ({len(md)} chars)")
-        if md and len(md) > 10000:
+        if md and len(md) > 7000:
             return {"paper_md": md}
         else:
             print(f"Markdown too short ({len(md)} chars). Skipping.")
@@ -170,7 +175,6 @@ Paper:
     ])
     
     content = response.content.strip()
-    print(f"Metadata extraction response:\n{content}")
     
     # Parse the response
     metadata = {}
@@ -300,7 +304,7 @@ def extract_risk_metrics(state: GraphState) -> dict:
     
     @tool
     def submit_risk_metrics(metrics: List[Dict[str, str]]) -> str:
-        """Submit multiple extracted risk metrics from the paper in one call.
+        """Submit multiple extracted risk metrics from the paper in one call. This tool is for the results the meta-analyse only. DON'T USE THIS TO SUBMIT ANALYTICS FROM INDIVIDUAL STUDIES!
         
         Args:
             metrics: List of risk metrics, where each metric is a dict with keys:
@@ -320,7 +324,7 @@ def extract_risk_metrics(state: GraphState) -> dict:
                     "ci_95": "1.20-1.75"
                 },
                 {
-                    "menopause_timing_definition": "<40 vs 50-55",
+                    "menopause_timing_definition": "<45 vs 50-55",
                     "health_outcome": "Cardiovascular disease (adjusted)",
                     "metric_type": "HR",
                     "metric_value": "1.28",
@@ -348,25 +352,33 @@ def extract_risk_metrics(state: GraphState) -> dict:
             except Exception as e:
                 output += f"✗ Failed to store metric: {metric} -- Error: {e.name}\n"
         
-        output += f"Successfully submitted {submitted} risk metric(s). Call finish_extraction when done."
+        output += f"Successfully submitted {submitted} risk metric(s). Call finish_extraction when done. Password to finish extraction: 2122"
         print(output)
         return output
     
     @tool
-    def finish_extraction() -> str:
-        """Call this when you have finished extracting ALL relevant risk metrics from the paper, or if there are no relevant metrics to extract."""
+    def finish_extraction(password: int, paper_contains_no_relevant_metrics: bool) -> str:
+        """Call this when you have finished extracting ALL relevant risk metrics from the paper, or if there are no relevant metrics to extract.
+        
+        Args:
+            password: A 4 digit number that is returned after sucessfully submitting risk metrics using the submit_risk_metrics tool
+            paper_contains_no_relevant_metrics: True if the paper contains no relevant metrics, False otherwise
+        """
+        if not paper_contains_no_relevant_metrics:
+            if password != 2122:
+                return "Incorrect password. Did you submit the correct password after successfully submitting risk metrics using the submit_risk_metrics tool?"
         nonlocal extraction_complete
         extraction_complete = True
         return "Extraction complete."
     
     llm_with_tools = llm.bind_tools([submit_risk_metrics, finish_extraction])
     
-    metric_extraction_prompt = f"""Analyze this paper and extract ALL risk metrics (OR, HR, RR) linking menopause timing to health outcomes.
+    metric_extraction_prompt = f"""Analyze this paper and Extract ALL, including non-significant, risk metrics from the meta-analysis (OR, HR, RR) linking menopause timing to health outcomes.
 
 Target outcome: {state['disease_of_interest']}
 
-For EACH risk metric found, extract:
-1. menopause_timing_definition: Specific numeric age buckets that were compared (replace fuzzy wordings like "early", "natural", "late" with their numeric definitions) (e.g., "<40 vs 50-55", "40-50 vs >=51", "per 1-year decrease in ANM")
+For each risk metric, extract:
+1. menopause_timing_definition: Specific numeric age buckets that were compared (replace fuzzy wordings like "early", "natural", "late" with their numeric definitions e.g., "<40 vs 50-55", "45-50 vs >=51", "per 1-year decrease in ANM". -- If those definitions are not clear, use the fuzzy wording followed by your best guess of its numeric definition in parantheses, e.g., "early (<45) vs. late (>=51").
 2. health_outcome: Specific health outcome (e.g., "Breast Cancer (adjusted)", "Type 2 Diabetes", "Osteoporosis & Fractures (unadjusted)")
 3. metric_type: OR, HR, or RR
 4. metric_value: The numerical value (e.g., "1.45", "2.1")
@@ -374,15 +386,16 @@ For EACH risk metric found, extract:
 
 CRITICAL REQUIREMENTS:
 - MUST have 95% CI reported (skip metrics without CI)
-- Submit ALL metrics at once using the submit_risk_metrics tool.
-- Extract the main results, NOT SUBGROUP ANALYTICS.
+- Submit metrics at once using the submit_risk_metrics tool.
+- Extract the ALL risk metrics, derived by the meta-analysis.
+- NEVER extract individual study analytics. (Risk metrics must come from the meta-analysis results!))
 - When done, call the finish_extraction tool.
 
 Paper:
 {state['paper_md']}"""
     
     messages = [
-        SystemMessage(content="You are a scientific paper analyzer. Extract ALL risk metrics (OR, HR, RR) with their 95% CI. Submit all metrics in one call using the submit_risk_metrics tool. Call finish_extraction when done."),
+        SystemMessage(content="You are a scientific paper analyzer. Extract ALL final risk metrics (OR, HR, RR) from the meta-analysis, NOT individual study analytics. Submit all metrics in one call using the submit_risk_metrics tool. Call finish_extraction when done."),
         HumanMessage(content=metric_extraction_prompt)
     ]
     
@@ -398,10 +411,8 @@ Paper:
         messages.append(response)
         
         if hasattr(response, 'tool_calls') and response.tool_calls:
-            print(f"  {len(response.tool_calls)} tool call(s)")
-            print(response.tool_calls)
             for i, tc in enumerate(response.tool_calls):
-                print(f"    Tool call {i+1}: {tc.get('name', 'unknown')} - args keys: {list(tc.get('args', {}).keys())}")
+                print(f"  Tool {i+1}: {tc.get('name', 'unknown')}")
             
             tool_messages = []
             for tool_call in response.tool_calls:
@@ -427,7 +438,8 @@ Paper:
                         })
                 
                 elif tool_name == 'finish_extraction':
-                    result = finish_extraction.invoke({})
+                    args = tool_call['args']
+                    result = finish_extraction.invoke(args)
                     print(f"  ✓ {result}")
                     tool_messages.append({
                         "role": "tool",

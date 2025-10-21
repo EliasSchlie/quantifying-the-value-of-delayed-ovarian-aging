@@ -2,6 +2,10 @@ from docling.document_converter import DocumentConverter
 from pathlib import Path
 import pymupdf4llm
 import re
+import logging
+
+# Suppress docling's verbose logging
+logging.getLogger('docling').setLevel(logging.WARNING)
 
 
 def fix_encoding_errors(docling_text: str, pymupdf_text: str) -> str:
