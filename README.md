@@ -67,7 +67,8 @@ uv run python paywalled_pdf_ingestor.py  # Set closed_access_pdfs=True
 
 ### Workflow Diagram
 
-The system uses a LangGraph workflow to automatically find research papers and extract risk metrics linking menopause timing to health outcomes.
+The following is the diagram of the main agent ([`src/agent/agent.py`](src/agent/agent.py)) implemented as a LangGraph workflow that automatically finds research papers and extracts risk metrics linking menopause timing to health outcomes.
+
 
 ```mermaid
 flowchart TD
@@ -117,32 +118,6 @@ flowchart TD
 - **filter_papers**: Deduplicates based on already-checked DOIs
 - **download_paper**: Downloads PDF via DOI → converts to markdown
 - **track_failed_download**: Logs failed downloads to CSV for later manual processing
-
-### Routing Logic
-
-- **route_after_abstract**: 
-  - Relevant paper found → `download_paper`
-  - More papers to check → `check_abstract`
-  - Papers exhausted → `create_query`
-  - Max queries reached → `END`
-
-- **route_after_download**: 
-  - Success → `extract_metadata`
-  - Failed → `track_failed_download`
-
-- **route_after_extraction**: 
-  - Enough metrics collected → `END`
-  - More papers available → `check_abstract`
-  - Papers exhausted → `create_query`
-  - Max papers/queries reached → `END`
-
-### State Management
-
-The workflow tracks:
-- `checked_dois`: Prevents re-processing papers
-- `tried_queries`: Enables query diversification
-- `metrics_count`: Progress toward target
-- `max_metrics`, `max_papers`, `max_queries`: Configurable limits
 
 ## Module Reference
 
