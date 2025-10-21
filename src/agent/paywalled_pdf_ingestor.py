@@ -1,3 +1,41 @@
+"""
+Batch processor for paywalled/manually downloaded PDFs.
+
+This module handles PDFs that couldn't be automatically downloaded via the main workflow in `agent.py`,
+typically because they're behind paywalls or require institutional access. It processes
+PDFs that were manually obtained and placed in the extra_pdfs/ folder.
+
+Key features:
+1. Processes PDFs from disk (no DOI download needed)
+2. Uses AI agent to search PubMed and match PDF to metadata
+3. Extracts metadata, evaluates ROBIS quality, and extracts risk metrics
+4. Reuses the same extraction pipeline as the main agent workflow in `agent.py`
+
+The PubMed matching agent:
+- Analyzes the PDF content to identify title and authors
+- Crafts search queries to find the paper in PubMed
+- Compares results to confirm correct match
+- Retrieves complete metadata (DOI, dates, etc.)
+
+Folder structure:
+    extra_pdfs/
+        all_cause_dementia/
+            paper1.pdf
+            paper2.pdf
+        cardiovascular_disease/
+            paper3.pdf
+        ...
+
+Each subfolder name is used as the disease_of_interest for metrics extraction.
+
+Usage:
+    total_metrics = process_paywalled_pdfs("extra_pdfs/cardiovascular_disease", 
+                                          "Cardiovascular Disease")
+    
+    # Or process all subfolders:
+    python paywalled_pdf_ingestor.py  # (with closed_access_pdfs=True)
+"""
+
 from dotenv import load_dotenv
 from pubmedAPI import PubMedAPI
 from agent import extract_metadata, evaluate_robis, extract_risk_metrics

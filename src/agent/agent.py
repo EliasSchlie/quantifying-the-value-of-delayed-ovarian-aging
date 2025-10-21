@@ -1,3 +1,30 @@
+"""
+Main agentic workflow for automatic menopause research paper discovery and risk metric extraction.
+
+This module implements a LangGraph-based agent that:
+1. Generates targeted PubMed search queries for menopause timing and health outcomes
+2. Searches PubMed API for meta-analyses and systematic reviews
+3. Filters papers to avoid duplicates
+4. Uses AI to evaluate abstract relevance
+5. Downloads open-access PDFs and converts to markdown
+6. Extracts paper metadata (study count, sample size, geography, confounders)
+7. Evaluates study quality using ROBIS criteria
+8. Extracts risk metrics (OR, HR, RR) with confidence intervals
+9. Stores results to CSV for further analysis
+
+The workflow is implemented as a state machine with conditional routing based on:
+- Metrics collected vs target
+- Papers checked vs limit
+- Queries tried vs limit
+
+Usage:
+    python agent.py
+    
+    Configure via the __main__ block:
+    - testing: Run on single disease
+    - go_through_all_diseases: Process all 7 health outcomes
+"""
+
 from langchain_nebius import ChatNebius
 from dotenv import load_dotenv
 from pubmedAPI import PubMedAPI

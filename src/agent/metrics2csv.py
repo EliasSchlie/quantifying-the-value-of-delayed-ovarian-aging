@@ -1,3 +1,44 @@
+"""
+CSV storage manager for extracted risk metrics and paper metadata.
+
+This module provides a simple interface to store risk metrics extracted from research papers
+in a structured CSV format. Each row represents one risk metric (OR, HR, or RR) with
+associated metadata about the study.
+
+CSV schema:
+- disease: Target health outcome category
+- menopause_timing_definition: Age comparison (e.g., "<40 vs 50-55")
+- health_outcome: Specific outcome measured
+- metric_type: OR, HR, or RR
+- metric_value: Numerical risk value
+- ci_95: 95% confidence interval
+- reference: DOI URL
+- date_published: Publication date
+- n_of_included_studies: Number of studies in meta-analysis
+- sample_size: Total participants
+- geography: Study regions
+- confounder_vars: Adjusted variables
+- authors: Paper authors
+- robis_categorical_risk: Low/High/Unclear
+- robis_quality_score: 0-10 quality rating
+
+The file is created with headers if it doesn't exist, and all writes are append-only.
+
+Usage:
+    storage = InteractionStorage("results.csv")
+    storage.add_risk_metric(
+        disease="Cardiovascular Disease",
+        menopause_timing="<45 vs >=51",
+        health_outcome="CHD",
+        metric_type="HR",
+        value="1.45",
+        ci_95="1.20-1.75",
+        reference="https://doi.org/10.1234/example",
+        date_published="2023-01-15",
+        paper_metadata={...}
+    )
+"""
+
 import csv
 from pathlib import Path
 

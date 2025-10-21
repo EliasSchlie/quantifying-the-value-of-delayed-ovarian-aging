@@ -1,3 +1,26 @@
+"""
+PDF to Markdown converter with hybrid approach for optimal quality.
+
+This module combines two PDF extraction libraries to get the best of both worlds:
+- Docling: Excellent structure preservation and table extraction
+- pymupdf4llm: Superior character encoding and special character handling
+
+The conversion process:
+1. Extract with Docling (preserves document structure, tables, formatting)
+2. Extract with pymupdf4llm (reference for correct character encoding)
+3. Find encoding errors in Docling output (/uniXXXX patterns, HTML entities)
+4. Use context-based matching to find correct characters from pymupdf
+5. Replace encoding errors while preserving Docling's superior structure
+
+This approach solves the common problem where PDFs contain special characters
+that one library handles better than another.
+
+Usage:
+    markdown = pdf_to_markdown("paper.pdf")
+    with open("paper.md", "w") as f:
+        f.write(markdown)
+"""
+
 from docling.document_converter import DocumentConverter
 from pathlib import Path
 import pymupdf4llm

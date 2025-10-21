@@ -1,3 +1,28 @@
+"""
+DOI to PDF downloader with multiple fallback strategies.
+
+This module downloads research papers as PDFs from their DOI using a multi-stage approach:
+1. Check if it's an arXiv paper → direct PDF download
+2. Query Unpaywall API for open-access PDF URLs
+3. Use Bright Data web unlocker to download open-access PDFs (if API key available)
+4. Fall back to direct download for open-access URLs
+5. If HTML is returned instead of PDF, extract PDF download links and retry
+6. As last resort, convert HTML to PDF via markdown
+
+Handles edge cases:
+- arXiv papers (direct PDF access)
+- Publisher HTML pages (extracts PDF links)
+- Malformed responses (size validation)
+- Rate limiting and timeouts
+
+Environment variables:
+    BRIGHT_WEB_UNLOCKER_KEY: Optional API key for Bright Data service (important to increase download success rate)
+
+Usage:
+    downloader = PDFFromDOI(output_dir="pdfs")
+    pdf_path = downloader.download("10.1001/jamacardio.2016.2415")
+"""
+
 import os
 import re
 import json

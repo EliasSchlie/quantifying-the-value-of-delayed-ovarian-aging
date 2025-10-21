@@ -1,3 +1,26 @@
+"""
+PubMed E-utilities API client for searching and fetching research papers.
+
+This module provides a simple interface to the NCBI PubMed database via E-utilities API.
+It handles:
+- Searching PubMed with custom queries
+- Filtering for meta-analyses
+- Fetching detailed paper metadata (title, abstract, authors, DOI, etc.)
+- Batch processing for efficient API usage
+
+The API is used without authentication but follows NCBI's usage guidelines
+by including email and tool name in requests.
+
+Usage:
+    api = PubMedAPI()
+    papers = api.search("menopause timing cardiovascular disease", 
+                       max_results=100, 
+                       meta_analysis_only=True)
+    
+    for paper in papers:
+        print(paper['title'], paper['doi'])
+"""
+
 import urllib.request
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -110,12 +133,12 @@ class PubMedAPI:
 
 if __name__ == "__main__":
     api = PubMedAPI()
-    papers = api.search('("menopause timing" OR "age at menopause" OR "early menopause" OR premature menopause OR postmenopause OR"natural menopause") AND ("cardiovascular disease"[mh] OR"cardiovascular system"[mh] OR "coronary heart disease" OR"coronary artery disease" OR "myocardial infarction" OR "heart disease" OR stroke OR CVD)', max_results=100, meta_analysis_only=True)
+    papers = api.search('("menopause timing" OR "age at menopause" OR "early menopause" OR premature menopause OR postmenopause OR"natural menopause") AND ("cardiovascular disease"[mh] OR"cardiovascular system"[mh] OR "coronary heart disease" OR"coronary artery disease" OR "myocardial infarction" OR "heart disease" OR stroke OR CVD)', max_results=3, meta_analysis_only=True)
     for i, paper in enumerate(papers, 1):
-        # print(f"\n{i}. {paper['title']}")
-        # print(f"   Authors: {', '.join(paper['authors'][:3])}")
-        # print(f"   Journal: {paper['journal']} ({paper['pub_date']})")
+        print(f"\n{i}. {paper['title']}")
+        print(f"   Authors: {', '.join(paper['authors'][:3])}")
+        print(f"   Journal: {paper['journal']} ({paper['pub_date']})")
         print(f"   DOI: {paper['doi']}")
-        # print(f"   PMID: {paper['pmid']}")
-        # print(f"   Abstract: {paper['abstract'][:150]}..." if len(paper['abstract']) > 150 else f"   Abstract: {paper['abstract']}")
+        print(f"   PMID: {paper['pmid']}")
+        print(f"   Abstract: {paper['abstract'][:150]}..." if len(paper['abstract']) > 150 else f"   Abstract: {paper['abstract']}")
 
