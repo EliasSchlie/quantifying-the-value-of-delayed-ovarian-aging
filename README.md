@@ -2,6 +2,8 @@
 
 An autonomous AI system for discovering and extracting risk metrics from research papers linking menopause timing to health outcomes. Built for the "[Agentic AI Against Aging](https://www.hackaging.ai/)" hackathon.
 
+📄 **[Read the full whitepaper](whitepaper/whitepaper.pdf)** for detailed methodology and results.
+
 ## Overview
 
 This project automates the systematic review process for menopause research by:
@@ -61,7 +63,7 @@ uv run python agent.py  # Set testing=True, disease_of_interest="cardiovascular 
 ```bash
 cd src/agent
 uv run python paywalled_pdf_ingestor.py  # Set closed_access_pdfs=True
-# Note: Place manually downloaded PDFs in extra_pdfs/<disease_name>/ folders first
+# Note: Place manually downloaded PDFs in closed_access_pdfs/<disease_name>/ folders first
 ```
 
 ## Architecture
@@ -125,7 +127,7 @@ flowchart TD
 
 ### Core Modules
 
-#### `agent.py`
+#### [`agent.py`](src/agent/agent.py)
 Main agentic workflow implementing the LangGraph state machine.
 
 **Key Functions:**
@@ -157,7 +159,7 @@ result = agent.invoke({
 })
 ```
 
-#### `pubmedAPI.py`
+#### [`pubmedAPI.py`](src/agent/pubmedAPI.py)
 PubMed E-utilities API client for searching and fetching papers.
 
 **Key Methods:**
@@ -179,7 +181,7 @@ papers = api.search("menopause timing cardiovascular disease",
                    meta_analysis_only=True)
 ```
 
-#### `doi2pdf.py`
+#### [`doi2pdf.py`](src/agent/doi2pdf.py)
 DOI to PDF downloader with multiple fallback strategies.
 
 **Download Strategy:**
@@ -198,7 +200,7 @@ downloader = PDFFromDOI(output_dir="pdfs")
 pdf_path = downloader.download("10.1001/jamacardio.2016.2415")
 ```
 
-#### `pdf2md.py`
+#### [`pdf2md.py`](src/agent/pdf2md.py)
 Hybrid PDF to Markdown converter combining Docling + pymupdf4llm.
 
 **Why Hybrid?**
@@ -220,7 +222,7 @@ from pdf2md import pdf_to_markdown
 markdown = pdf_to_markdown("paper.pdf")
 ```
 
-#### `metrics2csv.py`
+#### [`metrics2csv.py`](src/agent/metrics2csv.py)
 CSV storage manager for extracted risk metrics and paper metadata.
 
 **CSV Schema:**
@@ -260,14 +262,14 @@ storage.add_risk_metric(
 
 ### Supporting Modules
 
-#### `paywalled_pdf_ingestor.py`
+#### [`paywalled_pdf_ingestor.py`](src/agent/paywalled_pdf_ingestor.py)
 Batch processor for paywalled PDFs that cannot be legally downloaded programmatically.
 
 **Why This Exists:**
 Many high-quality meta-analyses are published in journals behind institutional paywalls. While these papers may be accessible to researchers with institutional subscriptions, they cannot be legally downloaded via automated scripts. This module enables processing of such papers once they've been manually obtained through legitimate access channels.
 
 **Features:**
-- Processes PDFs from `extra_pdfs/<disease>/` folders
+- Processes PDFs from `closed_access_pdfs/<disease>/` folders
 - Uses AI agent to match PDFs to PubMed metadata (since we only have the PDF, not the DOI)
 - Reuses the same extraction pipeline as main agent (ROBIS evaluation, metadata extraction, risk metrics)
 
@@ -279,7 +281,7 @@ Many high-quality meta-analyses are published in journals behind institutional p
 
 **Folder Structure:**
 ```
-extra_pdfs/
+closed_access_pdfs/
   all_cause_dementia/
     paper1.pdf
     paper2.pdf
@@ -289,10 +291,10 @@ extra_pdfs/
 
 **Usage:**
 ```bash
-uv run python paywalled_pdf_ingestor.py  # Processes all subfolders in extra_pdfs/
+uv run python paywalled_pdf_ingestor.py  # Processes all subfolders in closed_access_pdfs/
 ```
 
-#### `paperHTML2pdf.py`
+#### [`paperHTML2pdf.py`](src/agent/paperHTML2pdf.py)
 HTML to PDF converter (fallback for HTML-only papers).
 
 **When Used:**
@@ -311,10 +313,10 @@ HTML to PDF converter (fallback for HTML-only papers).
 
 ### Generated Files
 
-- **`menopause_risk_metrics.csv`**: Main output with all extracted risk metrics
-- **`failed_downloads.csv`**: Paywalled/closed-access papers that couldn't be programmatically downloaded and require manual access through institutional subscriptions
+- **[`menopause_risk_metrics.csv`](menopause_risk_metrics.csv)**: Main output with all extracted risk metrics
+- **[`failed_downloads.csv`](failed_downloads.csv)**: Paywalled/closed-access papers that couldn't be programmatically downloaded and require manual access through institutional subscriptions
 - **`pdfs/`**: Successfully downloaded open-access PDF files (named by DOI)
-- **`extra_pdfs/`**: Manually obtained paywalled PDFs, organized by disease category
+- **`closed_access_pdfs/`**: Manually obtained paywalled PDFs, organized by disease category
 
 ### Data Quality
 
@@ -340,7 +342,7 @@ BRIGHT_WEB_UNLOCKER_KEY=your_brightdata_key
 
 ### Adjustable Parameters
 
-In `agent.py` `__main__` block:
+In [`agent.py`](src/agent/agent.py) `__main__` block:
 ```python
 result = agent.invoke({
     "disease_of_interest": "cardiovascular disease",
@@ -366,7 +368,7 @@ ovarian_aging/
 │   └── prompts/
 │       └── robis.md                    # ROBIS evaluation prompt
 ├── pdfs/                               # Downloaded PDFs
-├── extra_pdfs/                         # Manually downloaded PDFs
+├── closed_access_pdfs/                 # Manually downloaded PDFs
 │   ├── all_cause_dementia/
 │   ├── cardiovascular_disease/
 │   └── ...
@@ -380,7 +382,7 @@ ovarian_aging/
 
 ### Adding New Health Outcomes
 
-Edit `agent.py`:
+Edit [`agent.py`](src/agent/agent.py):
 ```python
 diseases = [
     "All Cause Mortality",
@@ -391,11 +393,11 @@ diseases = [
 
 ### Customizing ROBIS Evaluation
 
-Edit `src/prompts/robis.md` to adjust quality criteria.
+Edit [`src/prompts/robis.md`](src/prompts/robis.md) to adjust quality criteria.
 
 ### Adding PDF Download Sources
 
-Extend `doi2pdf.py` `_download_pdf_direct()` or add new methods.
+Extend [`doi2pdf.py`](src/agent/doi2pdf.py) `_download_pdf_direct()` or add new methods.
 
 ## License
 

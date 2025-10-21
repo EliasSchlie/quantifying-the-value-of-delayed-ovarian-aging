@@ -3,7 +3,7 @@ Batch processor for paywalled/manually downloaded PDFs.
 
 This module handles PDFs that couldn't be automatically downloaded via the main workflow in `agent.py`,
 typically because they're behind paywalls or require institutional access. It processes
-PDFs that were manually obtained and placed in the extra_pdfs/ folder.
+PDFs that were manually obtained and placed in the closed_access_pdfs/ folder.
 
 Key features:
 1. Processes PDFs from disk (no DOI download needed)
@@ -18,7 +18,7 @@ The PubMed matching agent:
 - Retrieves complete metadata (DOI, dates, etc.)
 
 Folder structure:
-    extra_pdfs/
+    closed_access_pdfs/
         all_cause_dementia/
             paper1.pdf
             paper2.pdf
@@ -29,7 +29,7 @@ Folder structure:
 Each subfolder name is used as the disease_of_interest for metrics extraction.
 
 Usage:
-    total_metrics = process_paywalled_pdfs("extra_pdfs/cardiovascular_disease", 
+    total_metrics = process_paywalled_pdfs("closed_access_pdfs/cardiovascular_disease", 
                                           "Cardiovascular Disease")
     
     # Or process all subfolders:
@@ -273,12 +273,12 @@ if __name__ == "__main__":
         total_metrics = process_paywalled_pdfs(folder_path, disease)
 
     if closed_access_pdfs:
-        # Process each subfolder in extra_pdfs with its own disease name
-        extra_pdfs_path = Path("extra_pdfs")
+        # Process each subfolder in closed_access_pdfs with its own disease name
+        closed_access_pdfs_path = Path("closed_access_pdfs")
         total_metrics = 0
         
-        if extra_pdfs_path.exists():
-            subfolders = [f for f in extra_pdfs_path.iterdir() if f.is_dir()]
+        if closed_access_pdfs_path.exists():
+            subfolders = [f for f in closed_access_pdfs_path.iterdir() if f.is_dir()]
             
             for subfolder in sorted(subfolders):
                 # Convert folder name to disease name (e.g., "all_cause_dementia" -> "All Cause Dementia")
@@ -292,7 +292,7 @@ if __name__ == "__main__":
                 print(f"Metrics extracted for {disease}: {metrics}")
                 total_metrics += metrics
         else:
-            print(f"✗ Folder not found: extra_pdfs")
+            print(f"✗ Folder not found: closed_access_pdfs")
     
     elif re_run_open_access_pdfs:
         folder_path = "pdfs"
