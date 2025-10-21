@@ -251,15 +251,28 @@ def process_paywalled_pdfs(folder: str, disease_of_interest: str = "cardiovascul
 if __name__ == "__main__":
 
     testing = False
-    closed_access_pdfs = True
+    closed_access_pdfs = False
     re_run_open_access_pdfs = False
     
     if testing:
         folder_path = "test_pdfs/cvd"
         disease = "cardiovascular disease"
         total_metrics = process_paywalled_pdfs(folder_path, disease)
-    
-    elif closed_access_pdfs:
+
+    if True:
+        folder_path = "closed_access_pdfs/osteoporosis_fractures"
+        disease = "osteoporosis and fractures"
+        total_metrics = process_paywalled_pdfs(folder_path, disease)
+
+        folder_path = "closed_access_pdfs/ovarian_cancer"
+        disease = "ovarian cancer"
+        total_metrics = process_paywalled_pdfs(folder_path, disease)
+
+        folder_path = "closed_access_pdfs/type_2_diabetes"
+        disease = "type 2 diabetes"
+        total_metrics = process_paywalled_pdfs(folder_path, disease)
+
+    if closed_access_pdfs:
         # Process each subfolder in extra_pdfs with its own disease name
         extra_pdfs_path = Path("extra_pdfs")
         total_metrics = 0
