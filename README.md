@@ -25,12 +25,10 @@ This project automates the systematic review process for menopause research by:
 ## Video Tutorials
 
 ### 🎥 How to Run the Code (Setup & Execution)
-[![How to Run the Code](https://img.youtube.com/vi/zJ3JlktQBr4/maxresdefault.jpg)](https://youtu.be/zJ3JlktQBr4)
 
 **[▶️ Watch: Complete Setup and Execution Guide](https://youtu.be/zJ3JlktQBr4)**
 
 ### 🎥 How the Code Works (Architecture Deep Dive)
-[![How the Code Works](https://img.youtube.com/vi/y0ua6s-mHO8/maxresdefault.jpg)](https://youtu.be/FTK1YCP_gtU)
 
 **[▶️ Watch: Architecture and Implementation Walkthrough](https://youtu.be/FTK1YCP_gtU)**
 
