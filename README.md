@@ -44,6 +44,7 @@ cp .env.example .env
 # - NEBIUS_API_KEY (required for LLM)
 # - BRIGHT_WEB_UNLOCKER_KEY (for more reliable automated PDF downloads)
 ```
+To get those api keys, you need to make an account and upload some money at [Nibius](https://studio.nebius.com/) and [Bright data](https://brightdata.com/)
 
 ### Running the Agent
 
@@ -117,7 +118,7 @@ flowchart TD
 - **evaluate_robis**: Assesses study quality using ROBIS framework (risk rating + 0-10 score)
 - **extract_risk_metrics**: Uses tool calls to extract OR/HR/RR metrics with confidence intervals
 
-**Tool/Logic Nodes:**
+**Logic Nodes:**
 - **search_pubmed**: Queries PubMed API for meta-analyses (up to 500 results)
 - **filter_papers**: Deduplicates based on already-checked DOIs
 - **download_paper**: Downloads PDF via DOI → converts to markdown
