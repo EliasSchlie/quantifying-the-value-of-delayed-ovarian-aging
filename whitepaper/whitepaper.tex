@@ -3,11 +3,12 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{setspace}
 \usepackage{footmisc}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{titlesec}
 \usepackage{graphicx}
 \usepackage{pdflscape}
 \usepackage{xcolor}
+\usepackage{array}
 \usepackage[backend=biber,style=apa]{biblatex}
 \usepackage{newunicodechar}
 \newunicodechar{−}{\textminus}
@@ -38,27 +39,31 @@
 \newpage
 
 \section{Executive Summary}
-This report estimates the economic value of the 5 year therapeutic menopause delay for women in US who enter it before 45. It was completed as part of the Agentic AI Against Aging Hackathon. First, we present an our AI pipeline that collects, grades and extracts papers with their relevant metrics. Second, we document our economic methodology for estimating annual US direct and indirect costs and total addressable market. Third, we conclude the report by presenting the results.
+This report estimates the economic value of the 5-year therapeutic menopause delay for women in the US who enter it before 45. It was completed as part of the Agentic AI Against Aging Hackathon. First, we present our AI pipeline that collects, grades, and extracts papers with their relevant metrics. Second, we document our economic methodology for estimating annual US direct and indirect costs and total addressable market. Third, we conclude the report by presenting the results.
 
-The AI pipeline autonomously discovers and extracts risk metrics from research papers linking menopause timing to health outcomes across seven disease categories. Using a LangGraph-based state machine, the system iteratively generates PubMed queries, evaluates abstract relevance, downloads open-access PDFs, and extracts structured risk metrics (OR, HR, RR) with confidence intervals while assessing study quality via ROBIS criteria \parencite{whitingROBISNewTool2016}. The fully autonomous pipeline processed 1655 meta-analyses and extracted 584 high-quality risk metrics with complete metadata traceability.
+The AI pipeline autonomously discovers and extracts risk metrics from research papers linking menopause timing to health outcomes across eight disease categories. Using a LangGraph-based state machine, the system iteratively generates PubMed queries, evaluates abstract relevance, downloads open-access PDFs, and extracts structured risk metrics (OR, HR, RR) with confidence intervals while assessing study quality via ROBIS criteria \parencite{whitingROBISNewTool2016}. The fully autonomous pipeline processed 1655 meta-analyses and extracted 584 high-quality risk metrics with complete metadata traceability.
 
-In economic methodology we first calculate the net effect therapeutic menopause delay has on annual accidents per 100,000 women for: all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, endometrial cancer, and ovarian cancer. Then we estimate the annual direct and indirect cost per accident for each disease. Multiplying the annual cost per accident by the net change in accidents per 100,000 women gives us the total yearly cost. A 5-year therapeutic delay would save these costs 5 years in a row, hence we calculate the total present value of these saving by applying a 3\% discount rate (4.5797 multiplier). 
+In the economic methodology, we first calculate the net effect therapeutic menopause delay has on annual incidents per 100,000 women for: all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, endometrial cancer, and ovarian cancer. Then, we estimate the annual direct and indirect cost per incident for each disease. Multiplying the annual cost per incident by the net change in incidents per 100,000 women gives us the total yearly cost. A 5-year therapeutic delay would save these costs 5 years in a row; hence, we calculate the total present value of these savings by applying a 3\% discount rate (4.5797 multiplier). 
 
-Lastly we need to scale these results to appropriate US population. 1.3 million women enter menopause in US every year (\cite{PeacockMenopauseStatPearls2023}. Out of them 5\% have it before 45 years old, this is 65,000 women (\cite{NHSInformEarlyPrematureMenopause2025}). Scaling our costs for 100,000 women to 65,000 gives the yearly addressable market in US. The total addressable market applies these costs to 5\% of all women in US: 8,589,000. 
+Lastly, we scaled these results to the appropriate US population. 1.3 million women enter menopause in the US every year \parencite{PeacockMenopauseStatPearls2023}. Of these, 5\% have it before 45 years old, which totals 65,000 women \parencite{NHSInformEarlyPrematureMenopause2025}. Scaling our costs for 100,000 women to 65,000 gives the yearly addressable market in the US. The total addressable market applies these costs to 5\% of all women in the US: 8,589,000. 
 
-The results are as follows, ... Due to the time and data constraints, the final costs are first and foremost \textit{rough} estimates, we recommend considering it as a ±33\% range.
+The results are as follows: ... Due to time and data constraints, the final costs are first and foremost \textit{rough} estimates, and we recommend considering them within a ±33\% range.
+
+George Box famously wrote ``All models are wrong, but some are useful''; we hope our report will be in line with that spirit.
 
 
 \newpage
 \section{AI Pipeline}
 Source code available at:\newline \url{https://github.com/EliasSchlie/quantifying-the-value-of-delayed-ovarian-aging}.
 \subsection{Overview and Motivation}
-Systematic literature reviews require substantial manual effort: searching databases, screening hundreds of abstracts, downloading papers, extracting data tables, and assessing study quality. For our menopause timing research, we needed to collect risk metrics across seven disease categories from meta-analyses—a task that would traditionally require weeks of manual work by trained researchers.
+Systematic literature reviews require substantial manual effort: searching databases, screening hundreds of abstracts, downloading papers, extracting data tables, and assessing study quality. For our menopause timing research, we needed to collect risk metrics across eight disease categories from meta-analyses—a task that would traditionally require weeks of manual work by trained researchers.
 
 We developed an autonomous AI agent to automate this entire pipeline, from query generation to structured data extraction. The system operates as a LangGraph state machine with nine nodes that iteratively discover relevant papers, evaluate their quality, and extract risk metrics with full metadata traceability. This approach enabled us to process 1655 papers and extract 584 metrics in a fraction of the time required for manual review, while maintaining rigorous quality standards through automated ROBIS assessment.
 
 \subsection{Architecture}
-The agent is implemented as a directed graph workflow with three types of nodes: AI-powered decision nodes, rule-based action nodes, and conditional routing nodes (see Appendix A for complete workflow diagram). The workflow begins with query generation and terminates when either the target number of metrics is reached or search space is exhausted.
+The agent is implemented as a directed graph workflow with three types of nodes: AI-powered decision nodes, rule-based action nodes, and conditional routing nodes (see Figure~\ref{fig:workflow} for the complete workflow diagram). The workflow begins with query generation and terminates when either the target number of metrics is reached or the search space is exhausted.
+
+\vspace{1em}
 
 \textbf{AI-Powered Nodes:}
 \begin{itemize}
@@ -68,6 +73,11 @@ The agent is implemented as a directed graph workflow with three types of nodes:
     \item \texttt{evaluate\_robis}: Assesses study quality using the ROBIS framework, providing both categorical risk rating (Low/High/Unclear) and numerical validity score (0-10)
     \item \texttt{extract\_risk\_metrics}: Uses structured tool calls to extract odds ratios (OR), hazard ratios (HR), and relative risks (RR) with 95\% confidence intervals
 \end{itemize}
+
+
+\vspace{1em}
+
+
 
 \textbf{Deterministic Nodes:}
 \begin{itemize}
@@ -80,10 +90,11 @@ The agent is implemented as a directed graph workflow with three types of nodes:
 The workflow incorporates four conditional routing points that determine next actions based on state (see Figure \ref{fig:workflow}).
 
 \subsection{Key Technical Components}
+\vspace{1em}
 
-\textbf{PubMed Integration:} The system queries the NCBI E-utilities API with programmatically generated search strings that combine menopause timing terminology with disease-specific keywords. Queries are filtered to meta-analyses and systematic reviews only, and the agent learns from unsuccessful queries to reformulate searches.
+\textbf{PubMed Integration:} The system queries the NCBI E-utilities API with programmatically generated search strings that combine menopause timing terminology with disease-specific keywords. Queries are filtered to meta-analyses only, and the agent learns from unsuccessful queries to reformulate searches.
 
-\textbf{PDF Acquisition:} PDF downloads employ a multi-strategy approach: (1) direct arXiv access for preprints, (2) Unpaywall API queries for open-access versions, (3) Bright Data web unlocker for publisher sites, (4) direct DOI resolution, and (5) HTML-to-PDF conversion as a last resort. Failed downloads are logged with full metadata for manual processing.
+\textbf{PDF Acquisition:} PDF downloads employ a multi-strategy approach: (1) direct arXiv access for preprints, (2) Unpaywall API queries for open-access versions, (3) Bright Data web unlocker for publisher sites, (4) direct DOI resolution, and (5) HTML-to-PDF conversion as a last resort. Failed downloads are logged for manual processing.
 
 \textbf{Paywalled Content Pipeline:} For papers behind institutional paywalls that cannot be legally downloaded programmatically, we developed a separate ingestion pipeline (\texttt{paywalled\_pdf\_ingestor.py}). This system processes manually obtained PDFs through a PubMed matching agent that: (1) analyzes PDF content to identify title and authors, (2) generates targeted PubMed search queries, (3) validates matches by comparing metadata, and (4) retrieves complete publication information. Once matched, these PDFs flow through the same extraction pipeline (metadata extraction, ROBIS evaluation, and risk metric extraction) as open-access papers, ensuring consistent data quality across all sources. This dual-pipeline approach allowed us to incorporate high-quality paywalled meta-analyses while respecting copyright restrictions.
 
@@ -91,23 +102,25 @@ The workflow incorporates four conditional routing points that determine next ac
 
 \textbf{Quality Assessment:} Each paper undergoes ROBIS (Risk Of Bias In Systematic reviews) evaluation \parencite{whitingROBISNewTool2016} via structured LLM prompts. The agent assesses four domains: study eligibility criteria, identification and selection of studies, data collection and study appraisal, and synthesis and findings. This produces both a categorical risk rating and a 0-10 numerical score, enabling downstream filtering by quality thresholds.
 
-\textbf{Metric Extraction:} Risk metrics are extracted via LLM tool calls with strict validation: each metric must include menopause age thresholds (e.g., "<40 vs 50-55"), specific health outcome, metric type (OR/HR/RR), point estimate, and 95\% confidence interval. Vague age terms like "early menopause" are rejected to ensure precise age-risk mappings.
+\textbf{Metric Extraction:} Risk metrics are extracted via LLM tool calls with strict validation: each metric must include menopause age thresholds (e.g., "<40 vs 50-55"), specific health outcome, metric type (OR/HR/RR), point estimate, and 95\% confidence interval. The LLM is prompted to replace vague age terms like "early menopause" with their numeric definitions used in the meta-analysis, whenever possible, to ensure precise age-risk mappings.
 
 \subsection{Data Quality and Output}
-The pipeline ran for multiple hours, outputting a CSV file, containing 584+ risk metrics spanning seven health outcomes: all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, and endometrial/ovarian cancer. Each record includes complete metadata: publication DOI, date, authors, sample size, number of included studies, geographic scope, adjusted confounders, ROBIS scores, and source traceability. This structured dataset enables systematic meta-analysis of menopause timing effects across diverse health outcomes while maintaining full provenance from extraction to analysis.
+The pipeline ran for multiple hours, outputting a CSV file, containing 584 risk metrics spanning eight health outcomes: all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, endometrial cancer, and ovarian cancer. Each record includes complete metadata: publication DOI, date, authors, sample size, number of included studies, geographic scope, adjusted confounders, ROBIS scores, and source traceability. This structured dataset enables systematic meta-analysis of menopause timing effects across diverse health outcomes while maintaining full provenance from extraction to analysis.
 
 \subsection{Addressing Hallucinations}
-Addressing hallucinations was one of our main concerns. We implemented several safeguards to ensure the AI agent's outputs were accurate. The system uses structured tool calls with strict validation schemas that reject incomplete extractions, forcing complete citations and confidence intervals. All extracted metrics retain full source traceability through keeping a doi reference. We conducted extensive manual spot-checks across disease categories, comparing extracted risk metrics against source tables and forest plots in the original PDFs. Whenever inconsistencies were found, we searched for their root cause and improved the pipeline so this won't happen again. These measures provide confidence that the extracted metrics accurately reflect the underlying literature.
+Addressing hallucinations was one of our main concerns. We implemented several safeguards to ensure the AI agent's outputs were accurate. The system uses structured tool calls with strict validation schemas that reject incomplete extractions, forcing complete citations and confidence intervals. All extracted metrics retain full source traceability by keeping a DOI reference. We conducted extensive manual spot-checks across disease categories, comparing extracted risk metrics against source tables and forest plots in the original PDFs. Whenever inconsistencies were found, we searched for their root cause and improved the pipeline so this wouldn't happen again. These measures provide confidence that the extracted metrics accurately reflect the underlying literature.
 
 \subsection{Study Selection and Curation}
-The AI extracted over 250 risk metrics across seven disease categories. We used this data to identify the strongest meta-analysis for each disease. We evaluated studies on five criteria: ROBIS quality scores, sample size, publication date, geographic diversity, and confounder adjustment. Studies with low bias risk and validity scores above 8 out of 10 ranked highest. We prioritized meta-analyses with larger participant counts and more included studies. We also filtered by age comparison. Our economic model required specific menopause age thresholds—comparisons like "45-50 vs >=51" that aligned with a 5-year delay scenario. We excluded metrics with vague age categories ("early vs normal menopause") or age ranges that did not match the biological question at hand. This process yielded seven high quality meta-analyses, one per disease. Each exhibited low ROBIS risk, substantial sample sizes (typically 10+ studies with 100,000+ participants), and precise age-stratified risk estimates suitable for economic modeling.
+The AI extracted over 250 risk metrics across eight disease categories. To identify the most robust evidence for each disease, we systematically ranked studies according to five criteria: ROBIS quality scores, sample size, publication date, geographic diversity, and confounder adjustment. Studies with low risk of bias and validity scores above 8 out of 10 were given highest priority, as were meta-analyses with large participant numbers and broad study inclusion.
+
+To ensure comparability across diseases, we harmonized risk metrics by selecting studies with similar menopause age group comparisons. Rather than accepting any age threshold, we prioritized results where age cohorts matched closely across all outcomes—for example, "45–50 vs $\geq$51" wherever possible. Metrics with imprecise or mismatched age groups (e.g., undefined "early vs. normal menopause") were excluded. This approach yielded eight consistent, high-quality meta-analyses—one per disease—with clear, quantitative, age-stratified risk estimates suitable for economic modeling.
 
 \newpage
 \section{Estimation Methodology}
 \section*{Our Approach}
-From the AI pipeline we get the risk values (HR, OR, RR) for different diseases and menopause cohorts. For each of eight major health outcomes---all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, endometrial cancer, and ovarian cancer---we pair the extracted risk metric with baseline annual incidence among U.S. women aged 45--64. This cohort represents roughly 41.3 million individuals, capturing both perimenopausal and early postmenopausal women where timing shifts matter most. The net annual change in cases per 100,000 women is then calculated as: baseline incidence $\times$ (RR or HR - 1) for risks, or baseline incidence $\times$ (1 - RR or HR) for benefits. The 
+From the AI pipeline, we get the risk values (HR, OR, RR) for different diseases and menopause cohorts. For each of eight major health outcomes---all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, endometrial cancer, and ovarian cancer---we pair the extracted risk metric with baseline annual incidence among U.S. women aged 45--64. This cohort represents roughly 41.3 million individuals, capturing both perimenopausal and early postmenopausal women where timing shifts matter most. The net annual change in cases per 100,000 women is then calculated as: baseline incidence $\times$ (RR or HR - 1) for risks, or baseline incidence $\times$ (1 - RR or HR) for benefits.
 
-Once the epidemiologic impact is known, we assign economic weights. Direct costs represent medical expenditures per case---hospitalizations, treatments, medications, and follow-up care. Indirect costs capture lost productivity, informal caregiving, and premature mortality. Some diseases have more precise data and fit the annual costs metric better than others. For example, type 2 diabetes has exact, well-studied yearly direct costs, whereas all-cause mortality does not: dead have no costs. In such cases we use the closest reasonable proxy based on the available data. For example, we use end-of-life care for direct medical costs for all-cause mortality. While for indirect costs we apply the human capital approach (HCA) (\cite{GROSSMAN2000}).
+Once the epidemiologic impact is known, we assign economic weights. Direct costs represent medical expenditures per case---hospitalizations, treatments, medications, and follow-up care. Indirect costs capture lost productivity, informal caregiving, and premature mortality. Some diseases have more precise data and fit the annual costs metric better than others. For example, type 2 diabetes has exact, well-studied yearly direct costs, whereas all-cause mortality does not: the dead have no costs. In such cases, we use the closest reasonable proxy based on the available data. For example, we use end-of-life care for direct medical costs for all-cause mortality, while for indirect costs, we apply the human capital approach (HCA) \parencite{GROSSMAN2000}.
 
 Lastly, we multiply disease-specific cost per case by the net change in cases to obtain the annual economic impact for each condition. Summing across diseases yields the total estimated yearly savings. We then apply the 5-year present value calculation, as therapy would delay the menopause by 5 years. Below we list every used value with source and reasoning for it.
 
@@ -130,7 +143,7 @@ These baseline rates anchor our health impact model. When multiplied by the rela
 
 \section*{Direct Costs}
 
-Direct costs represent average annual medical expenditures per new case of disease. We focus on a per-incident perspective to align with our incidence-based modeling framework. Leaving aside All-Cause mortality, Cardiovascular Disease, All-Cause Dementia, Type 2 Diabetes, and Osteoporosis \& Fractures have exact, credible costs. Calculating it for cancers is not as straightforward, as its yearly costs highly vary and are bucketed into three phases: first year, last year before death, and all the years in between. For example for Breast Cancer these figures would be: \$33,700 , \$3,500 and \$73,200 respectively. What number one should choose for annual costs in such case? Making a single estimate across different types, years of continuation and recovery chances is hard. We decided to take model 
+Direct costs represent average annual medical expenditures per new case of disease. We focus on a per-incident perspective to align with our incidence-based modeling framework. Leaving aside all-cause mortality, cardiovascular disease, all-cause dementia, type 2 diabetes, and osteoporosis \& fractures have exact, credible costs. Calculating it for cancers is not as straightforward, as its yearly costs highly vary and are bucketed into three phases: first year, last year before death, and all the years in between. For example, for breast cancer these figures would be: \$33,700, \$3,500, and \$73,200 respectively. What number should one choose for annual costs in such a case? Making a single estimate across different types, years of continuation, and recovery chances is hard.
 
 When phase-specific cost data were available, we used a midpoint across diagnosis, treatment, and survivorship phases.
 
@@ -147,7 +160,7 @@ When phase-specific cost data were available, we used a midpoint across diagnosi
 
 \section*{Indirect Costs}
 
-Indirect costs capture the broader economic losses beyond healthcare spending, such as lost productivity, absenteeism, and unpaid caregiving. Cancers and fractures have precise authoritative calculations, rest of diseases do not. For them we would look for total annual indirect costs in US. Dividing it by the total annual number of accidents per disease would give us the indirect cost per accident. We consider these estimates the main risk of our methodology, as one also could argue for calculating them on prevalence based cases. This would yield meaningfully lower estimates, up to 5-10 times lower per accident. For all cause mortality we have used the human capital approach (HCA). 
+Indirect costs capture the broader economic losses beyond healthcare spending, such as lost productivity, absenteeism, and unpaid caregiving. Cancers and fractures have precise authoritative calculations; the rest of the diseases do not. For them, we look for total annual indirect costs in the US. Dividing it by the total annual number of incidents per disease gives us the indirect cost per incident. We consider these estimates the main risk of our methodology, as one could also argue for calculating them on prevalence-based cases. This would yield meaningfully lower estimates, up to 5-10 times lower per incident. For all-cause mortality, we have used the human capital approach (HCA). 
 
 \begin{itemize}
 \item \textbf{All-Cause Mortality:} \$553,800 per premature death. Forbes Advisor and MPRA paper 112129 guide the human capital method: median wage \$55,380 for women aged 45--64 times 10 remaining work years to retirement at 65.
@@ -165,15 +178,15 @@ The indirect cost estimates complement the direct medical costs, together reflec
 \newpage
 \section{Results}
 \subsection{Respondents Overview}
-We have reached out to 876 researchers personally via email in the period between May 2 and May 21 with 2 follow-ups. All together we got 64 completed surveys, excluding 17 pilot tested submissions, this is 47 final respondents.  The completion rate is 61\%, and average duration is 11 minutes 16 seconds. We cannot calculate the precise response rate as the survey is anonymous, and some have participated through email, but didn’t let us know. Yet, based on the social media engagement, and some data from de-anonymized responses (due to voluntary email sharing in the last question), we expect the response rate of emails to be around 4-5\%. The trend of participants completing the survey throughout the outreach period can be found in Appendix 2. From here on we discuss the data of the 47 received respondents. 
+We have reached out to 876 researchers personally via email in the period between May 2 and May 21 with 2 follow-ups. All together, we got 64 completed surveys, excluding 17 pilot-tested submissions; this is 47 final respondents. The completion rate is 61\%, and average duration is 11 minutes 16 seconds. We cannot calculate the precise response rate as the survey is anonymous, and some have participated through email but didn't let us know. Yet, based on the social media engagement and some data from de-anonymized responses (due to voluntary email sharing in the last question), we expect the response rate of emails to be around 4-5\%. The trend of participants completing the survey throughout the outreach period can be found in Appendix 2. From here on, we discuss the data of the 47 received respondents. 
 
 \subsection{Limitations}
-George Box famously wrote “All models are wrong, but some are useful”, we hope our limitations discussion to be in line with that spirit.
+
 
 The main limitation of our research is the 
 
 \subsection{Discussion and Recommendations}
-Our study posed three research questions about the importance of grant variables, potential tradeoffs scientists are willing to make and discrepancies in self-reported vs "actual" priorities. We find topic choice freedom to be the most important variable (27.70\%), followed by total funding (19.56\%), likelihood of acceptance (17.99\%), and surprisingly, speed of response (17.90\%). As notable tradeoffs we quantify a 1\% increase in topic choice freedom is of similar utility weight as an increase of total funding by \$17,000. Furthermore, replying to grant application one month faster was equal to \$15,000. On the self-reported side we find scientists to be relatively well calibrated, as most variables didn't have a statistically significant difference, but for total funding and speed of response.
+Our study posed three research questions about the importance of grant variables, potential tradeoffs scientists are willing to make, and discrepancies in self-reported vs "actual" priorities. We find topic choice freedom to be the most important variable (27.70\%), followed by total funding (19.56\%), likelihood of acceptance (17.99\%), and, surprisingly, speed of response (17.90\%). As notable tradeoffs, we quantify a 1\% increase in topic choice freedom is of similar utility weight as an increase of total funding by \$17,000. Furthermore, replying to grant application one month faster was equal to \$15,000. On the self-reported side, we find scientists to be relatively well calibrated, as most variables didn't have a statistically significant difference, except for total funding and speed of response.
 
 \newpage
 \appendix
@@ -184,6 +197,127 @@ Our study posed three research questions about the importance of grant variables
 \caption{LangGraph workflow architecture for autonomous research paper discovery and risk metric extraction. Green nodes are AI-powered, blue nodes are rule-based, and purple diamonds are routing decision points.}
 \label{fig:workflow}
 \end{figure}
+
+\begin{landscape}
+\section*{Appendix: Risk Values and Metrics}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|p{2.8cm}|p{2.8cm}|p{1.3cm}|p{1.3cm}|p{2.3cm}|>{\raggedright\arraybackslash}p{5cm}|}
+\hline
+\textbf{Disease} & \textbf{Menopause Definition} & \textbf{Risk Metric} & \textbf{Risk Value} & \textbf{95\% CI} & \textbf{DOI} \\
+\hline
+All Cause Mortality & $<$45 vs $\geq$45 & RR & 1.12 & 1.03 - 1.21 & 10.1001/jamacardio.2016.2415 \\
+\hline
+Type 2 Diabetes & 5-year decrease in ANM & HR & 1.230 & 1.11 - 1.36 & 10.1007/s00125-017-4346-8 \\
+\hline
+Cardiovascular Disease & 40-45 vs $>$45 & RR & 1.14 & 0.97 - 1.35 & 10.3389/fcvm.2023.1131251 \\
+\hline
+All Cause Dementia & $<$45 vs $\geq$45 & RR & 1.15 & 1.03 - 1.28 & 10.1016/j.eclinm.2021.101236 \\
+\hline
+Osteoporosis \& Fractures & 45-49 vs $>$50 & RR & 1.04 & 1.03 - 1.05 & 10.1186/s13018-023-04051-6 \\
+\hline
+Breast Cancer & 5-year increase in ANM & RR & 0.833 & 0.787 - 0.885 & 10.1038/sj.bjc.6604853 \\
+\hline
+Endometrial Cancer & $<$46.5 vs $\geq$46.5 & RR & 0.962 & 0.943 - 0.971 & 10.1155/2019/8584130 \\
+\hline
+Ovarian Cancer & 1-year increase in ANM & RR & 0.734 & 0.624 - 0.859 & 10.3389/fonc.2025.1541585 \\
+\hline
+\end{tabular}
+\caption{Risk metrics extracted from meta-analyses for each disease category. ANM = Age at Natural Menopause, RR = Relative Risk, HR = Hazard Ratio, CI = 95\% Confidence Interval, Source = DOI.}
+\label{tab:risk_metrics}
+\end{table}
+\end{landscape}
+
+\section*{Appendix: Annual Incidences and Net Effects}
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{5cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{Disease} & \textbf{Annual Incidences} & \textbf{Net Annual Change} \\
+\hline
+All Cause Mortality & 750 & 90 \\
+\hline
+Type 2 Diabetes & 900 & 207 \\
+\hline
+Cardiovascular Disease & 700 & 98 \\
+\hline
+All Cause Dementia & 300 & 45 \\
+\hline
+Osteoporosis \& Fractures & 200 & 8 \\
+\hline
+Breast Cancer & 55 & -9.185 \\
+\hline
+Endometrial Cancer & 13 & -0.494 \\
+\hline
+Ovarian Cancer & 4 & -1.064 \\
+\hline
+\end{tabular}
+\caption{Annual incidences per 100,000 women aged 45-64 and net annual change in cases per 100,000 women with a 5-year therapeutic menopause delay. Negative values indicate reduced risk.}
+\label{tab:incidences}
+\end{table}
+
+\section*{Appendix: Annual Direct and Indirect Costs}
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{5cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{Disease} & \textbf{Annual Direct Costs} & \textbf{Annual Indirect Costs} \\
+\hline
+All Cause Mortality & \$80,000.00 & \$553,800.00 \\
+\hline
+Type 2 Diabetes & \$12,022.00 & \$13,630.00 \\
+\hline
+Cardiovascular Disease & \$19,145.00 & \$36,500.00 \\
+\hline
+All Cause Dementia & \$53,502.00 & \$41,607.00 \\
+\hline
+Osteoporosis \& Fractures & \$50,508.00 & \$5,848.00 \\
+\hline
+Breast Cancer & \$23,480.00 & \$9,156.00 \\
+\hline
+Endometrial Cancer & \$27,280.00 & \$12,500.00 \\
+\hline
+Ovarian Cancer & \$44,880.00 & \$10,000.00 \\
+\hline
+\hline
+\textbf{Total Yearly Costs} & \textbf{\$310,817.00} & \textbf{\$683,041.00} \\
+\hline
+\end{tabular}
+\caption{Annual direct medical costs and indirect costs (lost productivity, caregiving) per case for each disease category. Total yearly costs represent the aggregate economic impact per 100,000 women.}
+\label{tab:costs}
+\end{table}
+
+\begin{landscape}
+\section*{Appendix: Annual Costs Scaled to 100,000 Women}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|p{3cm}|p{1.6cm}|p{1.8cm}|p{1.8cm}|p{2.4cm}|p{2.4cm}|p{2.4cm}|}
+\hline
+\textbf{Disease} & \textbf{Net Annual Change} & \textbf{Annual Direct Costs} & \textbf{Annual Indirect Costs} & \textbf{Direct Cost Change per 100k} & \textbf{Indirect Cost Change per 100k} & \textbf{Total Cost Change per 100k} \\
+\hline
+All Cause Mortality & 90 & \$80,000 & \$553,800 & \$7,200,000 & \$49,842,000 & \$57,042,000 \\
+\hline
+Type 2 Diabetes & 207 & \$12,022 & \$13,630 & \$2,488,554 & \$2,821,410 & \$5,309,964 \\
+\hline
+Cardiovascular Disease & 98 & \$19,145 & \$36,500 & \$1,876,210 & \$3,577,000 & \$5,453,210 \\
+\hline
+All Cause Dementia & 45 & \$53,502 & \$41,607 & \$2,407,590 & \$1,872,315 & \$4,279,905 \\
+\hline
+Osteoporosis \& Fractures & 8 & \$50,508 & \$5,848 & \$404,064 & \$46,784 & \$450,848 \\
+\hline
+Breast Cancer & -9.185 & \$23,480 & \$9,156 & -\$215,664 & -\$84,098 & -\$299,762 \\
+\hline
+Endometrial Cancer & -0.494 & \$27,280 & \$12,500 & -\$13,476 & -\$6,175 & -\$19,651 \\
+\hline
+Ovarian Cancer & -1.064 & \$44,880 & \$10,000 & -\$47,752 & -\$10,640 & -\$58,392 \\
+\hline
+\end{tabular}
+\caption{Economic impact of 5-year therapeutic menopause delay per 100,000 women. Net annual change multiplied by per-case costs yields total cost changes. Negative values indicate cost savings.}
+\label{tab:scaled_costs}
+\end{table}
+\end{landscape}
 
 \printbibliography
 
