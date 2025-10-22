@@ -28,6 +28,7 @@ failed_downloads.csv
 *.bcf
 
 pdfs/
+closed_access_pdfs/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
