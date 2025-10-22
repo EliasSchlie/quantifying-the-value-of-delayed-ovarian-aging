@@ -22,6 +22,18 @@ This project automates the systematic review process for menopause research by:
 - Breast Cancer
 - Endometrial/Ovarian Cancer
 
+## Video Tutorials
+
+### 🎥 How to Run the Code (Setup & Execution)
+[![How to Run the Code](https://img.youtube.com/vi/zJ3JlktQBr4/maxresdefault.jpg)](https://youtu.be/zJ3JlktQBr4)
+
+**[▶️ Watch: Complete Setup and Execution Guide](https://youtu.be/zJ3JlktQBr4)**
+
+### 🎥 How the Code Works (Architecture Deep Dive)
+[![How the Code Works](https://img.youtube.com/vi/y0ua6s-mHO8/maxresdefault.jpg)](https://youtu.be/FTK1YCP_gtU)
+
+**[▶️ Watch: Architecture and Implementation Walkthrough](https://youtu.be/FTK1YCP_gtU)**
+
 ## Quick Start
 
 ### Prerequisites
@@ -44,7 +56,7 @@ cp .env.example .env
 # - NEBIUS_API_KEY (required for LLM)
 # - BRIGHT_WEB_UNLOCKER_KEY (for more reliable automated PDF downloads)
 ```
-To get those api keys, you need to make an account and upload some money at [Nibius](https://studio.nebius.com/) and [Bright data](https://brightdata.com/)
+To get those api keys, you need to make an account and upload some money at [Nebius](https://studio.nebius.com/) and [Bright data](https://brightdata.com/)
 
 ### Running the Agent
 
