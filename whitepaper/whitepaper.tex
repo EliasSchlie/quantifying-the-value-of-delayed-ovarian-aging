@@ -38,14 +38,15 @@
 \newpage
 
 \section{Executive Summary}
-This report estimates the economic value of the therapeutic delay in menopause by 5 years. It was completed as part of the Agentic AI Against Aging Hackathon. First, we present an AI pipeline that collects, grades and extracts papers with their relevant metrics. Second, we document our economic methodology for estimating annual US direct and indirect costs. Third, we conclude the report by presenting the results.
+This report estimates the economic value of the 5 year therapeutic menopause delay for women in US who enter it before 45. It was completed as part of the Agentic AI Against Aging Hackathon. First, we present an AI pipeline that collects, grades and extracts papers with their relevant metrics. Second, we document our economic methodology for estimating annual US direct and indirect costs and total addressable market. Third, we conclude the report by presenting the results.
 
-The AI pipeline autonomously discovers and extracts risk metrics from research papers linking menopause timing to health outcomes across seven disease categories. Using a LangGraph-based state machine, the system iteratively generates PubMed queries, evaluates abstract relevance, downloads open-access PDFs, and extracts structured risk metrics (OR, HR, RR) with confidence intervals while assessing study quality via ROBIS criteria \parencite{whitingROBISNewTool2016}. The fully autonomous pipeline processed 1655 papers and extracted 584 high-quality risk metrics with complete metadata traceability.
+The AI pipeline autonomously discovers and extracts risk metrics from research papers linking menopause timing to health outcomes across seven disease categories. Using a LangGraph-based state machine, the system iteratively generates PubMed queries, evaluates abstract relevance, downloads open-access PDFs, and extracts structured risk metrics (OR, HR, RR) with confidence intervals while assessing study quality via ROBIS criteria \parencite{whitingROBISNewTool2016}. The fully autonomous pipeline processed 1000+ papers and extracted 250+ high-quality risk metrics with complete metadata traceability.
 
-In economic methodology we first calculate the net effect therapeutic menopause delay has on annual accidents per 100,000 women for several diseases (both positive and negative). Then we estimate the annual direct and indirect cost per accident for each disease. Lastly, we scale the results to US population to get the final estimate.
-Due to the time and data constraints, the final cost is first and foremost a \textit{rough} estimate, we recommend considering it as a ±33\% range.
+In economic methodology we first calculate the net effect therapeutic menopause delay has on annual accidents per 100,000 women for: all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, endometrial cancer, and ovarian cancer. Then we estimate the annual direct and indirect cost per accident for each disease. Multiplying the annual cost per accident by the net change in accidents per 100,000 women gives us the total yearly cost. A 5-year therapeutic delay would save these costs 5 years in a row, hence we calculate the total present value of these saving by applying a 3\% discount rate (4.5797 multiplier). 
 
-The results are as follows, ...
+Lastly we need to scale these results to appropriate US population. 1.3 million women enter menopause in US every year (\cite{PeacockMenopauseStatPearls2023}. Out of them 5\% have it before 45 years old, this is 65,000 women (\cite{NHSInformEarlyPrematureMenopause2025}). Scaling our costs for 100,000 women to 65,000 gives the yearly addressable market in US. The total addressable market applies these costs to 5\% of all women in US: 8,589,000. 
+
+The results are as follows, ... Due to the time and data constraints, the final costs are first and foremost \textit{rough} estimates, we recommend considering it as a ±33\% range.
 
 
 \newpage
@@ -99,9 +100,64 @@ The pipeline ran for multiple hours, outputting a CSV file, containing 250+ risk
 The AI extracted over 250 risk metrics across seven disease categories. We used this data to identify the strongest meta-analysis for each disease. We evaluated studies on five criteria: ROBIS quality scores, sample size, publication date, geographic diversity, and confounder adjustment. Studies with low bias risk and validity scores above 8 out of 10 ranked highest. We prioritized meta-analyses with larger participant counts and more included studies. We also filtered by age comparison. Our economic model required specific menopause age thresholds—comparisons like "45-50 vs >=51" that aligned with a 5-year delay scenario. We excluded metrics with vague age categories ("early vs normal menopause") or age ranges that did not match the biological question at hand. This process yielded seven high quality meta-analyses, one per disease. Each exhibited low ROBIS risk, substantial sample sizes (typically 10+ studies with 100,000+ participants), and precise age-stratified risk estimates suitable for economic modeling.
 
 \newpage
-\section{Economic Methodology}
-\subsection{Disease Incidents}
-Our target population is of all active scientists in the world that conduct research in the longevity field. Unfortunately, we are not aware of a field-wide dataset listing all active researchers. This poses a limitation we discuss later. Since we do not have a robust sampling frame, we use twofold non-probability sampling. First, we reach out to 1000 randomly selected researchers that have published in the last 1.5 years in 27 leading journals on aging that were selected by industry experts (see Appendix 1). Second, we use snowball sampling: we advertise the survey in social media, specifically in groups with longevity researchers we’d like to reach, and then we ask participants for further references.
+\section{Estimation Methodology}
+\section*{Our Approach}
+From the AI pipeline we get the risk values (HR, OR, RR) for different diseases and menopause cohorts. For each of eight major health outcomes---all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, endometrial cancer, and ovarian cancer---we pair the extracted risk metric with baseline annual incidence among U.S. women aged 45--64. This cohort represents roughly 41.3 million individuals, capturing both perimenopausal and early postmenopausal women where timing shifts matter most. The net annual change in cases per 100,000 women is then calculated as: baseline incidence $\times$ (RR or HR - 1) for risks, or baseline incidence $\times$ (1 - RR or HR) for benefits. The 
+
+Once the epidemiologic impact is known, we assign economic weights. Direct costs represent medical expenditures per case---hospitalizations, treatments, medications, and follow-up care. Indirect costs capture lost productivity, informal caregiving, and premature mortality. Some diseases have more precise data and fit the annual costs metric better than others. For example, type 2 diabetes has exact, well-studied yearly direct costs, whereas all-cause mortality does not: dead have no costs. In such cases we use the closest reasonable proxy based on the available data. For example, we use end-of-life care for direct medical costs for all-cause mortality. While for indirect costs we apply the human capital approach (HCA) (\cite{GROSSMAN2000}).
+
+Lastly, we multiply disease-specific cost per case by the net change in cases to obtain the annual economic impact for each condition. Summing across diseases yields the total estimated yearly savings. We then apply the 5-year present value calculation, as therapy would delay the menopause by 5 years. Below we list every used value with source and reasoning for it.
+
+\section*{Baseline Incidence Rate}
+
+We estimate the baseline annual incidence for U.S. women aged 45--64 using the most recent national datasets and peer-reviewed literature. Each figure represents cases per 100,000 women per year:
+
+\begin{itemize}
+\item \textbf{All-Cause Mortality:} 750 per 100,000. The CDC Data Brief 456 provides rates by age and sex; we combine 531 for 45--54 and 1,117 for 55--64, adjusting for female-specific patterns and population weights, as women show lower rates than men in the aggregated data.
+\item \textbf{Type 2 Diabetes:} 900 per 100,000. The CDC National Diabetes Statistics Report gives an overall adult rate of 1,010; we adjust for age cohorts and sex, noting women often have lower incidence.
+\item \textbf{Cardiovascular Disease:} 700 per 100,000. Derived from American Heart Association statistics and hospitalization data, this estimate captures events like heart failure around 877, tailored to full CVD in the cohort.
+\item \textbf{All-Cause Dementia:} 300 per 100,000. Based on Alzheimer's Association Facts and Figures, where Alzheimer's accounts for 60--80\% of dementia, we draw from Nature and PubMed studies for a conservative approximation in this age group.
+\item \textbf{Osteoporosis \& Fractures:} 200 per 100,000. Perplexity AI summary cites national hip fracture incidence of 511--553 overall; we adjust downward for ages 45--64, as most occur in older women.
+\item \textbf{Breast Cancer:} 55 per 100,000. SEER Stat Facts show an all-women rate of 130.8; the 45--64 cohort represents 42\% of cases, leading to this scaled estimate.
+\item \textbf{Endometrial Cancer:} 13 per 100,000. SEER Stat Facts indicate an all-women rate of 28.3; the cohort accounts for 45.7\% of cases, yielding this figure.
+\item \textbf{Ovarian Cancer:} 4 per 100,000. SEER Stat Facts report an all-women rate of 10; the cohort comprises 40\% of new cases, resulting in this low incidence.
+\end{itemize}
+
+These baseline rates anchor our health impact model. When multiplied by the relative risks extracted for menopause cohorts, they produce the annual change in new cases per 100,000 women.
+
+\section*{Direct Costs}
+
+Direct costs represent average annual medical expenditures per new case of disease. We focus on a per-incident perspective to align with our incidence-based modeling framework. Leaving aside All-Cause mortality, Cardiovascular Disease, All-Cause Dementia, Type 2 Diabetes, and Osteoporosis \& Fractures have exact, credible costs. Calculating it for cancers is not as straightforward, as its yearly costs highly vary and are bucketed into three phases: first year, last year before death, and all the years in between. For example for Breast Cancer these figures would be: \$33,700 , \$3,500 and \$73,200 respectively. What number one should choose for annual costs in such case? Making a single estimate across different types, years of continuation and recovery chances is hard. We decided to take model 
+
+When phase-specific cost data were available, we used a midpoint across diagnosis, treatment, and survivorship phases.
+
+\begin{itemize}
+\item \textbf{All-Cause Mortality:} \$80,000. The Lancet Regional Health article serves as a proxy for end-of-life healthcare expenditures, as ongoing costs do not apply post-death.
+\item \textbf{Type 2 Diabetes:} \$12,022. The ADA Economic Costs of Diabetes report provides a precise figure for direct medical spending per patient per year.
+\item \textbf{Cardiovascular Disease:} \$19,145. PMC article 11232126 details average annual direct medical expenditure per incident case, focused on ASCVD subset.
+\item \textbf{All-Cause Dementia:} \$53,502. PMC article 12231809 offers direct healthcare and long-term care costs per case.
+\item \textbf{Osteoporosis \& Fractures:} \$50,508. JBJS Open Access study covers hospitalization and treatment costs per fracture, a solid fit for incident cases.
+\item \textbf{Breast Cancer:} \$12,000. The Cancer Progress Report uses an annualized across-phase estimate, blending initial, continuing, and end-of-life costs for a moderate annual value.
+\item \textbf{Endometrial Cancer:} \$10,000. Perplexity AI summary derives an annualized across-phase cost, taking a midpoint above continuing-phase levels but below the full mean.
+\item \textbf{Ovarian Cancer:} \$20,000. PMC article 9514601 provides a mid-range estimate of yearly costs across the treatment continuum, using a weighted approach for survivorship phases.
+\end{itemize}
+
+\section*{Indirect Costs}
+
+Indirect costs capture the broader economic losses beyond healthcare spending, such as lost productivity, absenteeism, and unpaid caregiving. Cancers and fractures have precise authoritative calculations, rest of diseases do not. For them we would look for total annual indirect costs in US. Dividing it by the total annual number of accidents per disease would give us the indirect cost per accident. We consider these estimates the main risk of our methodology, as one also could argue for calculating them on prevalence based cases. This would yield meaningfully lower estimates, up to 5-10 times lower per accident. For all cause mortality we have used the human capital approach (HCA). 
+
+\begin{itemize}
+\item \textbf{All-Cause Mortality:} \$553,800 per premature death. Forbes Advisor and MPRA paper 112129 guide the human capital method: median wage \$55,380 for women aged 45--64 times 10 remaining work years to retirement at 65.
+\item \textbf{Type 2 Diabetes:} \$13,630. ADA Economic Costs report divides \$106.3 billion in productivity losses for 7.8 annual hospitalization incidents.
+\item \textbf{Cardiovascular Disease:} \$36,500. AHA Statistics and PMC article 11078557 compute indirect costs from \$168 billion total over 4.6 million annual cases.
+\item \textbf{All-Cause Dementia:} \$41,607. USC Schaeffer Center study attributes \$233 billion in informal care to 5.6 million cases for this annual per-case value.
+\item \textbf{Osteoporosis \& Fractures:} \$5,848. PMC article 8128807 directly reports work absence and reduced activity costs per fracture.
+\item \textbf{Breast Cancer:} \$9,156. ASCO Abstracts provide lost productivity per patient per year.
+\item \textbf{Endometrial Cancer:} \$12,500. Journal of Women's Health details work and activity impairment per case.
+\item \textbf{Ovarian Cancer:} \$10,000. Cancer Therapy Advisor outlines indirect productivity and caregiving losses per case.
+\end{itemize}
+
+The indirect cost estimates complement the direct medical costs, together reflecting the total annual economic burden per disease case. These are then multiplied by the net change in cases to quantify the full cost implications of delayed ovarian aging.
 
 \newpage
 \section{Results}
