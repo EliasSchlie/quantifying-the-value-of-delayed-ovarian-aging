@@ -24,6 +24,8 @@ failed_downloads.csv
 *.nav
 *.snm
 *.vrb
+*.run.xml
+*.bcf
 
 pdfs/
 
