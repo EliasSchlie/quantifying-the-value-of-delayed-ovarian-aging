@@ -702,7 +702,7 @@ if __name__ == "__main__":
             {
                 "disease_of_interest": "cardiovascular disease",
                 "metrics_count": 0,
-                "max_metrics": 10,
+                "max_metrics": 100,
                 "max_papers": 50,
                 "max_queries": 30,
                 "checked_dois": [],
