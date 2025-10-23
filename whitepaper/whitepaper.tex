@@ -129,15 +129,19 @@ Below we list every used value for baseline incidence rate, direct cost and indi
 
 We estimate the baseline annual incidence for U.S. women aged 45--64 using the most recent national datasets and peer-reviewed literature. Each figure represents cases per 100,000 women per year:
 
+\subsection{Baseline Incidence Rate}
+
+We estimate the baseline annual incidence for U.S. women aged 45--64 using the most recent national datasets and peer-reviewed literature. Each figure represents cases per 100,000 women per year:
+
 \begin{itemize}
-\item \textbf{All-Cause Mortality:} 750 per 100,000. The CDC Data Brief 456 provides rates by age and sex; we combine 531 for 45--54 and 1,117 for 55--64, adjusting for female-specific patterns and population weights, as women show lower rates than men in the aggregated data.
-\item \textbf{Type 2 Diabetes:} 900 per 100,000. The CDC National Diabetes Statistics Report gives an overall adult rate of 1,010; we adjust for age cohorts and sex, noting women often have lower incidence.
-\item \textbf{Cardiovascular Disease:} 700 per 100,000. Derived from American Heart Association statistics and hospitalization data, this estimate captures events like heart failure around 877, tailored to full CVD in the cohort.
-\item \textbf{All-Cause Dementia:} 300 per 100,000. Based on Alzheimer's Association Facts and Figures, where Alzheimer's accounts for 60--80\% of dementia, we draw from Nature and PubMed studies for a conservative approximation in this age group.
-\item \textbf{Osteoporosis \& Fractures:} 200 per 100,000. Perplexity AI summary cites national hip fracture incidence of 511--553 overall; we adjust downward for ages 45--64, as most occur in older women.
-\item \textbf{Breast Cancer:} 55 per 100,000. SEER Stat Facts show an all-women rate of 130.8; the 45--64 cohort represents 42\% of cases, leading to this scaled estimate.
-\item \textbf{Endometrial Cancer:} 13 per 100,000. SEER Stat Facts indicate an all-women rate of 28.3; the cohort accounts for 45.7\% of cases, yielding this figure.
-\item \textbf{Ovarian Cancer:} 4 per 100,000. SEER Stat Facts report an all-women rate of 10; the cohort comprises 40\% of new cases, resulting in this low incidence.
+\item \textbf{All-Cause Mortality:} 750 per 100,000. \cite{Xu2022} provides rates by age and sex; we combine 531 for 45--54 and 1,117 for 55--64, adjusting for female-specific patterns and population weights, as women show lower rates than men in the aggregated data.
+\item \textbf{Type 2 Diabetes:} 900 per 100,000. \cite{CDC2023} gives an overall adult rate of 1,010; we adjust for age cohorts and sex, noting women often have lower incidence.
+\item \textbf{Cardiovascular Disease:} 700 per 100,000. Derived from American Heart Association statistics and hospitalization data, this estimate captures events like heart failure around 877, tailored to full CVD in the cohort (\cite{Zhang2023}).
+\item \textbf{All-Cause Dementia:} 300 per 100,000. Based on \cite{AlzAssociation2025}, where Alzheimer's accounts for 60--80\% of dementia, we draw from Nature and PubMed studies for a conservative approximation in this age group.
+\item \textbf{Osteoporosis \& Fractures:} 200 per 100,000. \cite{IOF2025} cites national hip fracture incidence of 511--553 overall; we adjust downward for ages 45--64, as most occur in older women.
+\item \textbf{Breast Cancer:} 55 per 100,000. \cite{SEERBreastCancer} show an all-women rate of 130.8; the 45--64 cohort represents 42\% of cases, leading to this scaled estimate.
+\item \textbf{Endometrial Cancer:} 13 per 100,000. \cite{SEERProstateCancer} indicate an all-women rate of 28.3; the cohort accounts for 45.7\% of cases, yielding this figure.
+\item \textbf{Ovarian Cancer:} 4 per 100,000. \cite{SEEROvaryCancer} report an all-women rate of 10; the cohort comprises 40\% of new cases, resulting in this low incidence.
 \end{itemize}
 
 These baseline rates anchor our health impact model. When multiplied by the relative risks extracted for menopause cohorts, they produce the annual change in new cases per 100,000 women.
@@ -147,14 +151,14 @@ These baseline rates anchor our health impact model. When multiplied by the rela
 Direct costs represent average annual medical expenditures per new case of disease. We focus on a per-incident perspective to align with our incidence-based modeling framework. Leaving aside all-cause mortality, cardiovascular disease, all-cause dementia, type 2 diabetes, and osteoporosis \& fractures have exact, credible costs. Calculating it for cancers is not as straightforward, as its yearly costs highly vary and are bucketed into three phases: first year, last year before death, and all the years in between. For example, for breast cancer these figures would be: \$33,700, \$3,500, and \$73,200 respectively. What number should one choose for annual costs in such cases? We decided to treat cancers as a 5 year period with 3 continuation years in between. We would sum up these costs and divide by 5 to get a yearly estimate, even though no one single year would have such cost.
 
 \begin{itemize}
-\item \textbf{All-Cause Mortality:} \$80,000. The Lancet Regional Health article serves as a proxy for end-of-life healthcare expenditures, as ongoing costs do not apply post-death.
-\item \textbf{Type 2 Diabetes:} \$12,022. The ADA Economic Costs of Diabetes report provides a precise figure for direct medical spending per patient per year.
-\item \textbf{Cardiovascular Disease:} \$19,145. PMC article 11232126 details average annual direct medical expenditure per incident case, focused on ASCVD subset.
-\item \textbf{All-Cause Dementia:} \$53,502. PMC article 12231809 offers direct healthcare and long-term care costs per case.
-\item \textbf{Osteoporosis \& Fractures:} \$50,508. JBJS Open Access study covers hospitalization and treatment costs per fracture, a solid fit for incident cases.
-\item \textbf{Breast Cancer:} \$12,000. The Cancer Progress Report uses an annualized across-phase estimate, blending initial, continuing, and end-of-life costs for a moderate annual value.
-\item \textbf{Endometrial Cancer:} \$10,000. Perplexity AI summary derives an annualized across-phase cost, taking a midpoint above continuing-phase levels but below the full mean.
-\item \textbf{Ovarian Cancer:} \$20,000. PMC article 9514601 provides a mid-range estimate of yearly costs across the treatment continuum, using a weighted approach for survivorship phases.
+\item \textbf{All-Cause Mortality:} \$80,000. The \cite{Arapakis2022} article serves as a proxy for end-of-life healthcare expenditures, as ongoing costs do not apply post-death.
+\item \textbf{Type 2 Diabetes:} \$12,022. \cite{Parker2024} report provides a precise figure for direct medical spending per patient per year.
+\item \textbf{Cardiovascular Disease:} \$19,145. \cite{Shah2024} details average annual direct medical expenditure per incident case.
+\item \textbf{All-Cause Dementia:} \$53,502. \cite{Mehrotra2025} offers direct healthcare and long-term care costs per case.
+\item \textbf{Osteoporosis \& Fractures:} \$50,508.\cite{Adeyemi2019} study covers hospitalization and treatment costs per fracture, a solid fit for incident cases.
+\item \textbf{Breast Cancer:} \$23,480. \cite{Mariotto2020} uses an annualized across-phase estimate, taking the 5 year average with 3 years of continuation.
+\item \textbf{Endometrial Cancer:} \$27,280.\cite{Mariotto2020} uses an annualized across-phase estimate, taking the 5 year average with 3 years of continuation.
+\item \textbf{Ovarian Cancer:} \$44,880. \cite{Mariotto2020} uses an annualized across-phase estimate, taking the 5 year average with 3 years of continuation.
 \end{itemize}
 
 \section*{Indirect Costs}
@@ -162,14 +166,14 @@ Direct costs represent average annual medical expenditures per new case of disea
 Indirect costs capture the broader economic losses beyond healthcare spending, such as lost productivity, absenteeism, and unpaid caregiving. Cancers and fractures have precise authoritative calculations; the rest of the diseases do not. For them, we look for total annual indirect costs in the US. Dividing it by the total annual number of incidents per disease gives us the indirect cost per incident. We consider these estimates the main risk of our methodology, as one could also argue for calculating them on prevalence-based cases. This would yield meaningfully lower estimates, up to 5-10 times lower per incident. For all-cause mortality, we have used the human capital approach (HCA). 
 
 \begin{itemize}
-\item \textbf{All-Cause Mortality:} \$553,800 per premature death. Forbes Advisor and MPRA paper 112129 guide the human capital method: median wage \$55,380 for women aged 45--64 times 10 remaining work years to retirement at 65.
-\item \textbf{Type 2 Diabetes:} \$13,630. ADA Economic Costs report divides \$106.3 billion in productivity losses for 7.8 annual hospitalization incidents.
-\item \textbf{Cardiovascular Disease:} \$36,500. AHA Statistics and PMC article 11078557 compute indirect costs from \$168 billion total over 4.6 million annual cases.
-\item \textbf{All-Cause Dementia:} \$41,607. USC Schaeffer Center study attributes \$233 billion in informal care to 5.6 million cases for this annual per-case value.
-\item \textbf{Osteoporosis \& Fractures:} \$5,848. PMC article 8128807 directly reports work absence and reduced activity costs per fracture.
-\item \textbf{Breast Cancer:} \$9,156. ASCO Abstracts provide lost productivity per patient per year.
-\item \textbf{Endometrial Cancer:} \$12,500. Journal of Women's Health details work and activity impairment per case.
-\item \textbf{Ovarian Cancer:} \$10,000. Cancer Therapy Advisor outlines indirect productivity and caregiving losses per case.
+\item \textbf{All-Cause Mortality:} \$553,800 per premature death. \cite{Forbes2024} and \cite{MenniniGitto2022} guide the human capital method: median wage \$55,380 for women aged 45--64 times 10 remaining work years to retirement at 65.
+\item \textbf{Type 2 Diabetes:} \$13,630. \cite{Parker2024} report divides \$106.3 billion in productivity losses for 7.8 annual hospitalization incidents.
+\item \textbf{Cardiovascular Disease:} \$36,500. \cite{AHA2024} compute indirect costs from \$168 billion total over 4.6 million annual cases.
+\item \textbf{All-Cause Dementia:} \$41,607.\cite{Schaeffer2025} study attributes \$233 billion in informal care to 5.6 million cases for this annual per-case value.
+\item \textbf{Osteoporosis \& Fractures:} \$5,848. \cite{Mariotto2021} directly reports work absence and reduced activity costs per fracture.
+\item \textbf{Breast Cancer:} \$9,156.\cite{ASCO2024} provides lost productivity per patient per year.
+\item \textbf{Endometrial Cancer:} \$12,500. \cite{ASCO2024} details work and activity impairment per case.
+\item \textbf{Ovarian Cancer:} \$10,000. \cite{Lagan2019} and \cite{CancerTherapyAdvisor2024} outlines indirect productivity and caregiving losses per case.
 \end{itemize}
 
 The indirect cost estimates complement the direct medical costs, together reflecting the total annual economic burden per disease case. 
