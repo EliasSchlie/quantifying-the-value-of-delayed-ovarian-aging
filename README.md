@@ -2,7 +2,7 @@
 
 An autonomous AI system for discovering and extracting risk metrics from research papers linking menopause timing to health outcomes. Built for the "[Agentic AI Against Aging](https://www.hackaging.ai/)" hackathon.
 
-📄 **[Read the full whitepaper](whitepaper/whitepaper.pdf)** for detailed methodology and results.
+📄 **[Read the full whitepaper](whitepaper/whitepaper.pdf)** for detailed methodology and results, or **[check the website](http://menopauselater.com)** for a beautiful visualization.
 
 ## Overview
 
