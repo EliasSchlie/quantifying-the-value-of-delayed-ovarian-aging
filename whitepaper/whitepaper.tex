@@ -45,12 +45,11 @@ The AI pipeline autonomously discovers and extracts risk metrics from research p
 
 In the economic methodology, we first calculate the net effect therapeutic menopause delay has on annual incidents per 100,000 women for: all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, endometrial cancer, and ovarian cancer. Then, we estimate the annual direct and indirect cost per incident for each disease. Multiplying the annual cost per incident by the net change in incidents per 100,000 women gives us the total yearly cost. A 5-year therapeutic delay would save these costs 5 years in a row; hence, we calculate the total present value of these savings by applying a 3\% discount rate (4.5797 multiplier). 
 
-Lastly, we scaled these results to the appropriate US population. 1.3 million women enter menopause in the US every year \parencite{PeacockMenopauseStatPearls2023}. Of these, 5\% have it before 45 years old, which totals 65,000 women \parencite{NHSInformEarlyPrematureMenopause2025}. Scaling our costs for 100,000 women to 65,000 gives the yearly addressable market in the US. The total addressable market applies these costs to 5\% of all women in the US: 8,589,000. 
+Lastly, we scaled these results to the appropriate US population. 1.3 million women enter menopause in the US every year \parencite{PeacockMenopauseStatPearls2023}. Of these, 10\% have it before 45 years old, which totals 130,000 women \parencite{Anagnostis2025EarlyMenopause}. Scaling our costs for 100,000 women to 130,000 gives the yearly addressable market in the US. The total addressable market applies these costs to 10\% of all women in the US: 17,177,300.
 
-The results are as follows: ... Due to time and data constraints, the final costs are first and foremost \textit{rough} estimates, and we recommend considering them within a ±33\% range.
+Due to the scarcity of data, the chose cohort to study were women who enter menopause before and after 45. Of notable health impacts RR for all-cause mortality was 1.12, and for cardiovascular disease 1.14. This would result in 90 deaths per 100,000 people yearly, with 98 new cardiovascular cases. When scaled to 130,000 women with application of a 5-year multiple, the yearly total costs are \$429,601,314. Of which \$83,943,000 are direct, and \$345,658,000 are indirect. When scaled to 17,177,300 women, this results in a \$56,707,373,000 total addressable market. Due to time and data constraints, the final costs are first and foremost \textit{rough} estimates, and we recommend considering them within a ±33\% range.
 
 George Box famously wrote ``All models are wrong, but some are useful''; we hope our report will be in line with that spirit.
-
 
 \newpage
 \section{AI Pipeline}
@@ -117,14 +116,16 @@ To ensure comparability across diseases, we harmonized risk metrics by selecting
 
 \newpage
 \section{Estimation Methodology}
-\section*{Our Approach}
+\subsection{Our Approach}
 From the AI pipeline, we get the risk values (HR, OR, RR) for different diseases and menopause cohorts. For each of eight major health outcomes---all-cause mortality, type 2 diabetes, cardiovascular disease, all-cause dementia, osteoporosis and fractures, breast cancer, endometrial cancer, and ovarian cancer---we pair the extracted risk metric with baseline annual incidence among U.S. women aged 45--64. This cohort represents roughly 41.3 million individuals, capturing both perimenopausal and early postmenopausal women where timing shifts matter most. The net annual change in cases per 100,000 women is then calculated as: baseline incidence $\times$ (RR or HR - 1) for risks, or baseline incidence $\times$ (1 - RR or HR) for benefits.
 
 Once the epidemiologic impact is known, we assign economic weights. Direct costs represent medical expenditures per case---hospitalizations, treatments, medications, and follow-up care. Indirect costs capture lost productivity, informal caregiving, and premature mortality. Some diseases have more precise data and fit the annual costs metric better than others. For example, type 2 diabetes has exact, well-studied yearly direct costs, whereas all-cause mortality does not: the dead have no costs. In such cases, we use the closest reasonable proxy based on the available data. For example, we use end-of-life care for direct medical costs for all-cause mortality, while for indirect costs, we apply the human capital approach (HCA) \parencite{GROSSMAN2000}.
 
-Lastly, we multiply disease-specific cost per case by the net change in cases to obtain the annual economic impact for each condition. Summing across diseases yields the total estimated yearly savings. We then apply the 5-year present value calculation, as therapy would delay the menopause by 5 years. Below we list every used value with source and reasoning for it.
+Lastly, we multiply disease-specific cost per case by the net change in cases to obtain the annual economic impact for each condition. Summing across diseases yields the total estimated yearly savings. We then apply the 5-year present value calculation, as therapy would delay the menopause by 5 years. These costs could then be scaled to 130,000 women in US who yearly enter menopause before 45 to find the yearly addressable market. 10\% of all women enter menopause prior to 45, for the US population of 171,773,000 women this is the total addressable market of 17,177,000 people. 
 
-\section*{Baseline Incidence Rate}
+Below we list every used value for baseline incidence rate, direct cost and indirect costs with sources and reasoning for it, summary tables can also be found in appendix.
+
+\subsection{Baseline Incidence Rate}
 
 We estimate the baseline annual incidence for U.S. women aged 45--64 using the most recent national datasets and peer-reviewed literature. Each figure represents cases per 100,000 women per year:
 
@@ -143,9 +144,7 @@ These baseline rates anchor our health impact model. When multiplied by the rela
 
 \section*{Direct Costs}
 
-Direct costs represent average annual medical expenditures per new case of disease. We focus on a per-incident perspective to align with our incidence-based modeling framework. Leaving aside all-cause mortality, cardiovascular disease, all-cause dementia, type 2 diabetes, and osteoporosis \& fractures have exact, credible costs. Calculating it for cancers is not as straightforward, as its yearly costs highly vary and are bucketed into three phases: first year, last year before death, and all the years in between. For example, for breast cancer these figures would be: \$33,700, \$3,500, and \$73,200 respectively. What number should one choose for annual costs in such a case? Making a single estimate across different types, years of continuation, and recovery chances is hard.
-
-When phase-specific cost data were available, we used a midpoint across diagnosis, treatment, and survivorship phases.
+Direct costs represent average annual medical expenditures per new case of disease. We focus on a per-incident perspective to align with our incidence-based modeling framework. Leaving aside all-cause mortality, cardiovascular disease, all-cause dementia, type 2 diabetes, and osteoporosis \& fractures have exact, credible costs. Calculating it for cancers is not as straightforward, as its yearly costs highly vary and are bucketed into three phases: first year, last year before death, and all the years in between. For example, for breast cancer these figures would be: \$33,700, \$3,500, and \$73,200 respectively. What number should one choose for annual costs in such cases? We decided to treat cancers as a 5 year period with 3 continuation years in between. We would sum up these costs and divide by 5 to get a yearly estimate, even though no one single year would have such cost.
 
 \begin{itemize}
 \item \textbf{All-Cause Mortality:} \$80,000. The Lancet Regional Health article serves as a proxy for end-of-life healthcare expenditures, as ongoing costs do not apply post-death.
@@ -173,20 +172,28 @@ Indirect costs capture the broader economic losses beyond healthcare spending, s
 \item \textbf{Ovarian Cancer:} \$10,000. Cancer Therapy Advisor outlines indirect productivity and caregiving losses per case.
 \end{itemize}
 
-The indirect cost estimates complement the direct medical costs, together reflecting the total annual economic burden per disease case. These are then multiplied by the net change in cases to quantify the full cost implications of delayed ovarian aging.
+The indirect cost estimates complement the direct medical costs, together reflecting the total annual economic burden per disease case. 
 
 \newpage
 \section{Results}
-\subsection{Respondents Overview}
-We have reached out to 876 researchers personally via email in the period between May 2 and May 21 with 2 follow-ups. All together, we got 64 completed surveys, excluding 17 pilot-tested submissions; this is 47 final respondents. The completion rate is 61\%, and average duration is 11 minutes 16 seconds. We cannot calculate the precise response rate as the survey is anonymous, and some have participated through email but didn't let us know. Yet, based on the social media engagement and some data from de-anonymized responses (due to voluntary email sharing in the last question), we expect the response rate of emails to be around 4-5\%. The trend of participants completing the survey throughout the outreach period can be found in Appendix 2. From here on, we discuss the data of the 47 received respondents. 
+\subsection{Health Impacts}
+The final table with risk values and metrics can be found in appendix. Because the number of accidents per 100,000 people is low, one could use HR and RR interchangeably. OR has to be converted to be used, but in practice it gives similar values. Due to the data constraints, the only sound cohort comparisons we have found for all diseases (but one) was women entering the menopause before and after 45. For some of the diseases we found per-year increase risk values, we scaled them to a 5 year basis. Also in some values we changed the order of comparison (from >45 vs <45 to <45 vs >45) for convenience of analysis. Osteoporosis and fractures was the only diseases that didn't match this cohort definition, we used the closest available value. Each risk metric has an appropriate paper cited as source. 
+
+You can find the net annual change for each disease in appendix, it is derived from applying the risk values to the baseline incidences. Notably there would be a 90 death reductions, 207 less type 2 diabetic cases, 98 less cardiovascular cases. One would get even higher numbers if scaled to 130,000 women that enter the menopause every year in US before 45. Moreover, this impacts spans across a 5-year period  given the 5-year therapeutic delay intervention.
+
+\subsection{Economic Impacts}
+With the net annual change for each disease we can also calculate the potential economic savings. When applied, indirect costs of mortality trumpet the other expenditures (resulting in a \$49,842,000) which does make sense: prematurely dead people is a serious loss for society. The second highest cost is the impact of indirect cardiovascular diseases, with a \$3,577,000. 
+
+From this data we can calculate the yearly total costs for US. Summing all the direct and indirect costs for 100,000 people and multiplying them by 1.3 to get an estimate for 130,000 women. Lastly, one would need to apply a present value of annuity multiple with a 3\% discount rate, a 4.5797 multiple, that results in a \$429,601,314 total yearly cost. One could interpret that number as the yearly addressable market in US. Exact values for each disease can be found in appendix. To find the total addressable market in US we scale these costs to 17,177,300 people: (17,177,300 / 130,000) * \$429,601,314 = \$56,707,373,000.
 
 \subsection{Limitations}
+The limitations of our research are plenty. The main issue is the scarcity of high-quality data. First, that led us to focusing on women who enter menopause before and after the age of 45. This is not due to the lack of ambition or desire to study other cohorts, like from 45-50 vs 50+. It is because this was the only cohort that had risk values for all diseases, and thus could be properly modeled. Choosing other cohorts would result in incomplete and invalid comparisons.
 
+Second, that made us have more proxies and approximations for economic data than we would want to. Like calculating the yearly direct costs of cancers that widely differ depending on the year of treatment for patients. Similar issue occurred with indirect costs, where for some diseases we had to approximate the per year per incident costs by dividing the total yearly indirect costs by the total number of hospitalizations. If one would calculate it on prevalence basis yearly costs would be 5-10 times lower. In our defense hospitalizations is what accounts for most costs as they lead to prolonged periods without work and lower productivity in total.
 
-The main limitation of our research is the 
+These limitations are serious, hence we suggest the reader to take the final costs as first and foremost \textit{rough} estimates, we recommend considering them within a ±33\% range.
 
-\subsection{Discussion and Recommendations}
-Our study posed three research questions about the importance of grant variables, potential tradeoffs scientists are willing to make, and discrepancies in self-reported vs "actual" priorities. We find topic choice freedom to be the most important variable (27.70\%), followed by total funding (19.56\%), likelihood of acceptance (17.99\%), and, surprisingly, speed of response (17.90\%). As notable tradeoffs, we quantify a 1\% increase in topic choice freedom is of similar utility weight as an increase of total funding by \$17,000. Furthermore, replying to grant application one month faster was equal to \$15,000. On the self-reported side, we find scientists to be relatively well calibrated, as most variables didn't have a statistically significant difference, except for total funding and speed of response.
+As always, more research is needed.
 
 \newpage
 \appendix
@@ -221,7 +228,7 @@ Breast Cancer & 5-year increase in ANM & RR & 0.833 & 0.787 - 0.885 & 10.1038/sj
 \hline
 Endometrial Cancer & $<$46.5 vs $\geq$46.5 & RR & 0.962 & 0.943 - 0.971 & 10.1155/2019/8584130 \\
 \hline
-Ovarian Cancer & 1-year increase in ANM & RR & 0.734 & 0.624 - 0.859 & 10.3389/fonc.2025.1541585 \\
+Ovarian Cancer & 5-year increase in ANM& RR & 0.734 & 0.624 - 0.859 & 10.3389/fonc.2025.1541585 \\
 \hline
 \end{tabular}
 \caption{Risk metrics extracted from meta-analyses for each disease category. ANM = Age at Natural Menopause, RR = Relative Risk, HR = Hazard Ratio, CI = 95\% Confidence Interval, Source = DOI.}
@@ -253,7 +260,7 @@ Endometrial Cancer & 13 & -0.494 \\
 Ovarian Cancer & 4 & -1.064 \\
 \hline
 \end{tabular}
-\caption{Annual incidences per 100,000 women aged 45-64 and net annual change in cases per 100,000 women with a 5-year therapeutic menopause delay. Negative values indicate reduced risk.}
+\caption{Annual incidences per 100,000 women aged 45-64 and net annual change in cases per 100,000 women.}
 \label{tab:incidences}
 \end{table}
 
@@ -270,6 +277,7 @@ Type 2 Diabetes & \$12,022.00 & \$13,630.00 \\
 \hline
 Cardiovascular Disease & \$19,145.00 & \$36,500.00 \\
 \hline
+
 All Cause Dementia & \$53,502.00 & \$41,607.00 \\
 \hline
 Osteoporosis \& Fractures & \$50,508.00 & \$5,848.00 \\
@@ -280,11 +288,9 @@ Endometrial Cancer & \$27,280.00 & \$12,500.00 \\
 \hline
 Ovarian Cancer & \$44,880.00 & \$10,000.00 \\
 \hline
-\hline
-\textbf{Total Yearly Costs} & \textbf{\$310,817.00} & \textbf{\$683,041.00} \\
-\hline
+
 \end{tabular}
-\caption{Annual direct medical costs and indirect costs (lost productivity, caregiving) per case for each disease category. Total yearly costs represent the aggregate economic impact per 100,000 women.}
+\caption{Annual direct medical costs and indirect costs (lost productivity, caregiving) per case for each disease category.}
 \label{tab:costs}
 \end{table}
 
@@ -314,9 +320,41 @@ Endometrial Cancer & -0.494 & \$27,280 & \$12,500 & -\$13,476 & -\$6,175 & -\$19
 Ovarian Cancer & -1.064 & \$44,880 & \$10,000 & -\$47,752 & -\$10,640 & -\$58,392 \\
 \hline
 \end{tabular}
-\caption{Economic impact of 5-year therapeutic menopause delay per 100,000 women. Net annual change multiplied by per-case costs yields total cost changes. Negative values indicate cost savings.}
+\caption{Economic impact of 5-year therapeutic menopause delay per 100,000 women. Net annual change multiplied by per-case costs yields total cost changes.}
 \label{tab:scaled_costs}
 \end{table}
+\end{landscape}
+
+\begin{landscape}
+\section*{Appendix: Annual Costs Scaled to 130,000 Individuals}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|p{3.5cm}|p{2.8cm}|p{2.8cm}|p{2.8cm}|p{3.2cm}|}
+\hline
+\textbf{Disease} & \textbf{Direct Cost Change per 130,000} & \textbf{Indirect Cost Change per 130,000} & \textbf{Total Costs per 130,000} & \textbf{Multiplier Applied} \\
+\hline
+All Cause Mortality & \$9,360,000.00 & \$64,794,600.00 & \$74,154,600.00 & \$339,605,821.62 \\
+\hline
+Type 2 Diabetes & \$3,235,120.20 & \$3,667,833.00 & \$6,902,953.20 & \$31,613,454.77 \\
+\hline
+Cardiovascular Disease & \$2,439,073.00 & \$4,650,100.00 & \$7,089,173.00 & \$32,466,285.59 \\
+\hline
+All Cause Dementia & \$3,129,867.00 & \$2,434,009.50 & \$5,563,876.50 & \$25,480,885.21 \\
+\hline
+Osteoporosis \& Fractures & \$525,283.20 & \$60,819.20 & \$586,102.40 & \$2,684,173.16 \\
+\hline
+Breast Cancer & -\$280,362.94 & -\$109,327.22 & -\$389,690.16 & -\$1,784,664.02 \\
+\hline
+Endometrial Cancer & -\$17,519.22 & -\$8,027.50 & -\$25,546.72 & -\$116,996.30 \\
+\hline
+Ovarian Cancer & -\$62,078.02 & -\$13,832.00 & -\$75,910.02 & -\$347,645.10 \\
+\hline
+\end{tabular}
+\caption{Economic impact per 130,000 individuals across disease categories.}
+\label{tab:scaled_costs_130k}
+\end{table}
+
 \end{landscape}
 
 \printbibliography
