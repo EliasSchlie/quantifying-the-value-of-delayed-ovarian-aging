@@ -6,7 +6,7 @@ An autonomous AI system for discovering and extracting risk metrics from researc
 
 This project won $2,500 USD at the Agentic AI Against Aging hackathon (October 2025), competing against 54 teams from 129+ cities across 26 countries. ([Hackaging.ai](https://www.hackaging.ai/winners/#:~:text=The%20Value%20of%20Delayed%20Ovarian%20Aging))
 
-![▶️ Watch: Final Project Summary](https://youtu.be/e2YLdhuxH-Q)
+!https://youtu.be/e2YLdhuxH-Q
 
 ## Overview
 
