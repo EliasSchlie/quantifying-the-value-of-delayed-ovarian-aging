@@ -4,9 +4,9 @@ An autonomous AI system for discovering and extracting risk metrics from researc
 
 📄 **[Read the full whitepaper](whitepaper/whitepaper.pdf)** for detailed methodology and results, or **[check the website](http://menopauselater.com)** for a beautiful visualization.
 
-This project won $2,500 USD at the Agentic AI Against Aging hackathon (October 2025), competing against 54 teams from 129+ cities across 26 countries. ([Hackaging.ai](https://www.hackaging.ai/winners/#:~:text=The%20Value%20of%20Delayed%20Ovarian%20Aging))
+This project won **$2,500 USD** at the Agentic AI Against Aging hackathon🥳 (October 2025), competing against 54 teams from 129+ cities across 26 countries. ([Hackaging.ai](https://www.hackaging.ai/winners/#:~:text=The%20Value%20of%20Delayed%20Ovarian%20Aging))
 
-![](https://youtu.be/e2YLdhuxH-Q)
+[![Watch the video](https://img.youtube.com/vi/e2YLdhuxH-Q/maxresdefault.jpg)](https://youtu.be/e2YLdhuxH-Q)
 
 ## Overview
 
