@@ -22,6 +22,16 @@ This project automates the systematic review process for menopause research by:
 - Breast Cancer
 - Endometrial/Ovarian Cancer
 
+## 🏆 Achievements
+
+**Winner of [Hackaging.ai](https://www.hackaging.ai/winners/#:~:text=The%20Value%20of%20Delayed%20Ovarian%20Aging) - $2,500 USD Prize**
+
+This project won $2,500 USD at the Agentic AI Against Aging hackathon (October 2025), competing against 54 teams from 129+ cities across 26 countries.
+
+### 🎥 Project Summary & Final Presentation
+
+**[▶️ Watch: Final Project Summary](https://youtu.be/e2YLdhuxH-Q)**
+
 ## Video Tutorials
 
 ### 🎥 How to Run the Code (Setup & Execution)
