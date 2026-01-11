@@ -4,6 +4,10 @@ An autonomous AI system for discovering and extracting risk metrics from researc
 
 📄 **[Read the full whitepaper](whitepaper/whitepaper.pdf)** for detailed methodology and results, or **[check the website](http://menopauselater.com)** for a beautiful visualization.
 
+This project won $2,500 USD at the Agentic AI Against Aging hackathon (October 2025), competing against 54 teams from 129+ cities across 26 countries. ([Hackaging.ai](https://www.hackaging.ai/winners/#:~:text=The%20Value%20of%20Delayed%20Ovarian%20Aging))
+
+![▶️ Watch: Final Project Summary](https://youtu.be/e2YLdhuxH-Q)
+
 ## Overview
 
 This project automates the systematic review process for menopause research by:
@@ -21,16 +25,6 @@ This project automates the systematic review process for menopause research by:
 - Osteoporosis & Fractures
 - Breast Cancer
 - Endometrial/Ovarian Cancer
-
-## 🏆 Achievements
-
-**Winner of [Hackaging.ai](https://www.hackaging.ai/winners/#:~:text=The%20Value%20of%20Delayed%20Ovarian%20Aging) - $2,500 USD Prize**
-
-This project won $2,500 USD at the Agentic AI Against Aging hackathon (October 2025), competing against 54 teams from 129+ cities across 26 countries.
-
-### 🎥 Project Summary & Final Presentation
-
-**[▶️ Watch: Final Project Summary](https://youtu.be/e2YLdhuxH-Q)**
 
 ## Video Tutorials
 
